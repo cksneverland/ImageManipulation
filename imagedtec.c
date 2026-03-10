@@ -48,6 +48,7 @@ typedef struct
     DWORD Compression;
     WORD BitsPerPixel;
     BYTE paddingSize;
+    DWORD infoHeaderSize;
 
 }bitmapfile;
 
@@ -63,8 +64,8 @@ typedef struct
 bool bitmapSignatureCheck(BYTE *loadedbytes);
 QWORD getBmpAtribute(BYTE *loadedbytes, DWORD startingOffset, BYTE atributeSizeBytes, BYTE mode);
 Pallete get_All_Pallete_Colors(BYTE *loadedBytes,DWORD bitsPerPixel);
-pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, DWORD width, DWORD height, Pallete *pallete);// Switch between diffrent functopns
-pixel** form_Image_With_Pallates(BYTE *loadedBytes, DWORD width, DWORD height, Pallete *pallete, DWORD BitsPerPixel);
+pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete); // Switch between diffrent functopns
+pixel** create_4And8_BitPalletes(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete, DWORD BitsPerPixel);
 
 int main(int argc, char *argv[])
 {
@@ -94,22 +95,27 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    DWORD imageStart = getBmpAtribute(file.Bytes, bmpPixelDataOffset, bmpPixelDataOffsetSize, littleEndianMode);
-    DWORD width = getBmpAtribute(file.Bytes, bmpWidthOffset, bmpWidthOffsetSize, littleEndianMode);
-    DWORD height = getBmpAtribute(file.Bytes, bmpHeightOffset, bmpHeightOffsetSize, littleEndianMode);
-    WORD bitsPerPixel = getBmpAtribute(file.Bytes, bmpBitsPerPixeltOffset, bmpBitsPerPixelOffsetSize, littleEndianMode);
-    DWORD compression = getBmpAtribute(file.Bytes, bmpCompressionOffset, bmpCompressionOffsetSize, littleEndianMode);
-    DWORD infoHeadersize = getBmpAtribute(file.Bytes, bmpInfoHeaderSizeOfset, bmpInfoHeaderSizeOfsetSize, littleEndianMode);
+    bitmapfile imageData;
 
-    printf("imageOffset: 0x%x\n", imageStart);
-    printf("Width: %i\n", width);
-    printf("Height: %i\n", height);
-    printf("BitsPerPixel: %i\n", bitsPerPixel);
-    printf("Compression: %i\n", compression);
-    printf("Info header size: %i\n", infoHeadersize);
+    imageData.ImageStartOffset = 0;
+
+    imageData.ImageStartOffset = getBmpAtribute(file.Bytes, bmpPixelDataOffset, bmpPixelDataOffsetSize, littleEndianMode);
+    imageData.Width = getBmpAtribute(file.Bytes, bmpWidthOffset, bmpWidthOffsetSize, littleEndianMode);
+    imageData.Height = getBmpAtribute(file.Bytes, bmpHeightOffset, bmpHeightOffsetSize, littleEndianMode);
+    imageData.BitsPerPixel = getBmpAtribute(file.Bytes, bmpBitsPerPixeltOffset, bmpBitsPerPixelOffsetSize, littleEndianMode);
+    imageData.Compression = getBmpAtribute(file.Bytes, bmpCompressionOffset, bmpCompressionOffsetSize, littleEndianMode);
+    imageData.infoHeaderSize = getBmpAtribute(file.Bytes, bmpInfoHeaderSizeOfset, bmpInfoHeaderSizeOfsetSize, littleEndianMode);
+
+    // Debuging for now Should change latter
+    printf("imageOffset: 0x%x\n", imageData.ImageStartOffset);
+    printf("Width: %i\n", imageData.Width);
+    printf("Height: %i\n", imageData.Height);
+    printf("BitsPerPixel: %i\n", imageData.BitsPerPixel);
+    printf("Compression: %i\n", imageData.BitsPerPixel);
+    printf("Info header size: %i\n", imageData.BitsPerPixel);
 
   
-    Pallete Colors = get_All_Pallete_Colors(file.Bytes,bitsPerPixel);
+    Pallete Colors = get_All_Pallete_Colors(file.Bytes, imageData.BitsPerPixel);
 
     if(Colors.vlaid == false)
     {
@@ -118,7 +124,7 @@ int main(int argc, char *argv[])
     }
 
 
-    pixel **image = form_Image(file.Bytes, imageStart, bitsPerPixel, width, height, &Colors);
+    pixel **image = form_Image(file.Bytes, imageData.ImageStartOffset, imageData.BitsPerPixel, imageData.Width, imageData.Height, &Colors);
 
     if(image == NULL)
     {
@@ -128,7 +134,7 @@ int main(int argc, char *argv[])
     }
     
 
-    printf("Image last pixel| R: %i G: %i B: %i \n", image[height - 1][width - 1].red, image[height-1][width - 1].green, image[height-1][width - 1].blue);
+    printf("Image last pixel| R: %i G: %i B: %i \n", image[abs(imageData.Height) - 1][imageData.Width - 1].red, image[abs(imageData.Height) -1][imageData.Width - 1].green, image[abs(imageData.Height) -1][imageData.Width - 1].blue);
     printf("R: %i B: %i G: %i \n", Colors.pixels[9].red, Colors.pixels[9].green, Colors.pixels[9].blue);
     if(Colors.count > 18)
     {
@@ -138,7 +144,7 @@ int main(int argc, char *argv[])
     }
 
     
-    for(int i = 0; i < height; i++)
+    for(int i = 0; i < imageData.Height; i++)
     {
         free(image[i]);
     }
@@ -214,7 +220,7 @@ Pallete get_All_Pallete_Colors(BYTE *loadedBytes,DWORD bitsPerPixel)
 }
 
 // Intermidiary to all the other form image functions use this one only
-pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, DWORD width, DWORD height, Pallete *pallete)// Switch between diffrent functopns
+pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete)// Switch between diffrent functopns
 {
 
     pixel **image = NULL;
@@ -231,11 +237,11 @@ pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, 
     switch (bitsPerPixel)
     {
     case 4:
-        image = form_Image_With_Pallates(allaignedBytes, width, height, pallete, bitsPerPixel);
+        image = create_4And8_BitPalletes(allaignedBytes, width, height, pallete, bitsPerPixel);
         break;
     
     case 8:
-        image = form_Image_With_Pallates(allaignedBytes, width, height, pallete, bitsPerPixel);
+        image = create_4And8_BitPalletes(allaignedBytes, width, height, pallete, bitsPerPixel);
     
     default:
         break;
@@ -255,9 +261,23 @@ BYTE format_Pallete_Bytes(BYTE byte, BYTE bitMask, BYTE bitsPerPixel, BYTE maskI
     return formattedByte;
 }
 
-// 2 TO 8 bit palletes
-pixel** form_Image_With_Pallates(BYTE *loadedBytes, DWORD width, DWORD height, Pallete *pallete, DWORD BitsPerPixel)
+// 4 and 8 bit pallets
+pixel** create_4And8_BitPalletes(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete, DWORD BitsPerPixel)
 {
+    DWORD bit32NuumberSignMask = 0b10000000000000000000000000000000;
+    // check if image stored upsidedown
+    BYTE polarity = (height & bit32NuumberSignMask) >> (dwordSizeInBits -1);
+    printf("Polarity: %i \n", polarity);
+
+    if(polarity > 1 || polarity < 0)
+    {
+        return NULL;
+    }
+    if (polarity == 1)
+    {
+        height = ~height + 1; // turn it positive
+    }
+
     // Each row needs to be divisible by the size of dword in terms of bytes if not then it's padded
     DWORD totalWidthBytes;
 
@@ -277,6 +297,7 @@ pixel** form_Image_With_Pallates(BYTE *loadedBytes, DWORD width, DWORD height, P
     BYTE BitMaksModeDefault = (byteSizeInBits / BitsPerPixel) - 1;
     BYTE bitMaskMode = BitMaksModeDefault;
 
+    // Making the Image part
     for(int row = 0; row < height; row += 1)
     {   
         pixel *tempColumns = malloc(sizeof(pixel) * width);
@@ -296,7 +317,7 @@ pixel** form_Image_With_Pallates(BYTE *loadedBytes, DWORD width, DWORD height, P
         {
             BYTE currentByte = loadedBytes[loadedByteIndex];
 
-            if(BitsPerPixel < byteSizeInBits)
+            if(BitsPerPixel < byteSizeInBits) // 4 bit pallete
             {
                 for(int j = 0; j < byteSizeInBits / BitsPerPixel; j++)
                 {
@@ -322,16 +343,13 @@ pixel** form_Image_With_Pallates(BYTE *loadedBytes, DWORD width, DWORD height, P
                     {
                         break;
                     }
-                
-                    
-                    // printf("PalleteIndex: %i \n", palleteIndex);
-                    // printf("Byte: %x  ROw: %i  Column: %i\n", currentByte, row, i);
                     
                     bitMaskMode --;
                     
                 }
             }
-            else
+            
+            else // 8 bit pallete
             {
                 tempColumns[i].red = pallete->pixels[currentByte].red;
                 tempColumns[i].green = pallete->pixels[currentByte].green;
@@ -342,7 +360,17 @@ pixel** form_Image_With_Pallates(BYTE *loadedBytes, DWORD width, DWORD height, P
             loadedByteIndex ++ ;
             
         }
-        image[row] = tempColumns;
+        
+
+        if(polarity == 0)
+        {
+            image[row] = tempColumns;
+        }
+        else
+        {
+            image[(height - 1) - row] = tempColumns;
+        }
+
         loadedByteIndex += paddedBytes;
 
     }
