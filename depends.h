@@ -41,7 +41,7 @@ typedef struct
 
 typedef struct LoadedFiles
 {
-    long byte_count;
+    unsigned long byte_count;
     uint8_t *Bytes; // list lmao
     bool workingFile;
 
