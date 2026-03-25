@@ -87,12 +87,15 @@ pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, 
     switch (bitsPerPixel)
     {
     case 4:
-        image = create_4And8_BitPalletes(allaignedBytes, width, height, pallete, bitsPerPixel);
+        image = create_4BitPallete_Image(allaignedBytes, width, height, pallete);
         break;
     
     case 8:
-        image = create_4And8_BitPalletes(allaignedBytes, width, height, pallete, bitsPerPixel);
+        image = create_8BitPallete_Image(allaignedBytes, width, height, pallete);
     
+    case 16:
+        image = create_16Bit_Image(allaignedBytes, width, height);
+        break;
     default:
         break;
     }
@@ -104,38 +107,30 @@ pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, 
 }
 
 // bitGroupIndex is for a bit shift using bits per pixel
-BYTE format_Pallete_Bytes(BYTE byte, BYTE bitMask, BYTE bitsPerPixel, BYTE maskIndex)
+BYTE get_Pallete_Index(BYTE byte, BYTE bitMask, BYTE bitsPerPixel, BYTE maskIndex)
 {
     BYTE formattedByte = byte & bitMask;
     formattedByte = formattedByte >> (maskIndex  * bitsPerPixel);
     return formattedByte;
 }
 
-// 4 and 8 bit pallets
-pixel** create_4And8_BitPalletes(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete, DWORD BitsPerPixel)
+
+pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete)
 {
-    DWORD bit32NuumberSignMask = 0b10000000000000000000000000000000;
     // check if image stored upsidedown
-    BYTE polarity = (height & bit32NuumberSignMask) >> (dwordSizeInBits -1);
+    BYTE polarity = (height & bit32NuumberSignMask) >> (dwordSizeInBits -1); // 0 = positive 1 = negative
     printf("Polarity: %i \n", polarity);
 
-    if(polarity > 1 || polarity < 0)
+    if(polarity != positive && polarity != negative)
     {
         return NULL;
     }
-    if (polarity == 1)
+    else if (polarity == negative)
     {
         height = ~height + 1; // turn it positive
     }
 
-    // Each row needs to be divisible by the size of dword in terms of bytes if not then it's padded
-    DWORD totalWidthBytes;
-
-    // Genuine witch craft
-    totalWidthBytes = ((width * BitsPerPixel + 7) / 8); //Round up to full Byte
-    DWORD pixelBytes = (totalWidthBytes + 3) & ~3;  // Alligns the byte by dword sizes
-    
-    BYTE paddedBytes = pixelBytes - totalWidthBytes;
+    BYTE paddedBytes = calculatePaddedBytes(abs(width), halfByteSizeInBits);
 
     pixel **image = malloc(height * sizeof(pixel*));
     if(image == NULL)
@@ -144,7 +139,7 @@ pixel** create_4And8_BitPalletes(BYTE *loadedBytes, signedDWORD width, signedDWO
     }
 
     DWORD loadedByteIndex = 0;
-    BYTE BitMaksModeDefault = (byteSizeInBits / BitsPerPixel) - 1;
+    BYTE BitMaksModeDefault = 1; // Upper part of the byte
     BYTE bitMaskMode = BitMaksModeDefault;
 
     // Making the Image part
@@ -163,48 +158,37 @@ pixel** create_4And8_BitPalletes(BYTE *loadedBytes, signedDWORD width, signedDWO
             return NULL;
         }
         
-        for(int i = 0; i < width; i++)
+        for(int column = 0; column < width; column++)
         {
             BYTE currentByte = loadedBytes[loadedByteIndex];
-
-            if(BitsPerPixel < byteSizeInBits) // 4 bit pallete
-            {
-                for(int j = 0; j < byteSizeInBits / BitsPerPixel; j++)
+                for(int j = 0; j < byteSizeInBits / halfByteSizeInBits; j++)
                 {
                     BYTE palleteIndex;
 
                     // Change from four bit mask array later
                     if(j == 0)
                     {
-                        palleteIndex = format_Pallete_Bytes(currentByte,FourBitMaskArray[j], BitsPerPixel, bitMaskMode);
-                        tempColumns[i].red = pallete->pixels[palleteIndex].red;
-                        tempColumns[i].green = pallete->pixels[palleteIndex].green;
-                        tempColumns[i].blue = pallete->pixels[palleteIndex].blue;
+                        palleteIndex = get_Pallete_Index(currentByte,FourBitMaskArray[j], halfByteSizeInBits, bitMaskMode);
+                        tempColumns[column].red = pallete->pixels[palleteIndex].red;
+                        tempColumns[column].green = pallete->pixels[palleteIndex].green;
+                        tempColumns[column].blue = pallete->pixels[palleteIndex].blue;
                     }
-                    else if(i + 1 < width)
+                    else if(column + 1 < width)
                     {
-                        i++;
-                        palleteIndex = format_Pallete_Bytes(currentByte,FourBitMaskArray[j], BitsPerPixel, bitMaskMode);
-                        tempColumns[i].red = pallete->pixels[palleteIndex].red;
-                        tempColumns[i].green = pallete->pixels[palleteIndex].green;
-                        tempColumns[i].blue = pallete->pixels[palleteIndex].blue;
+                        column++;
+                        palleteIndex = get_Pallete_Index(currentByte,FourBitMaskArray[j], halfByteSizeInBits, bitMaskMode);
+                        tempColumns[column].red = pallete->pixels[palleteIndex].red;
+                        tempColumns[column].green = pallete->pixels[palleteIndex].green;
+                        tempColumns[column].blue = pallete->pixels[palleteIndex].blue;
                     }
                     else
                     {
                         break;
                     }
                     
-                    bitMaskMode --;
+                    bitMaskMode --; // Switch the mode
                     
                 }
-            }
-            
-            else // 8 bit pallete
-            {
-                tempColumns[i].red = pallete->pixels[currentByte].red;
-                tempColumns[i].green = pallete->pixels[currentByte].green;
-                tempColumns[i].blue = pallete->pixels[currentByte].blue;
-            }
            bitMaskMode = BitMaksModeDefault;
 
             loadedByteIndex ++ ;
@@ -226,4 +210,154 @@ pixel** create_4And8_BitPalletes(BYTE *loadedBytes, signedDWORD width, signedDWO
     }
 
     return image;
+}
+
+pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete)
+{
+    // check if image stored upsidedown
+    BYTE polarity = (height & bit32NuumberSignMask) >> (dwordSizeInBits -1);
+    printf("Polarity: %i \n", polarity);
+
+    if(polarity > 1 || polarity < 0)
+    {
+        return NULL;
+    }
+    if (polarity == 1)
+    {
+        height = ~height + 1; // turn it positive
+    }
+
+    BYTE paddedBytes = calculatePaddedBytes(abs(width), byteSizeInBits);
+
+    pixel **image = malloc(height * sizeof(pixel*));
+    if(image == NULL)
+    {
+        return NULL;
+    }
+
+    DWORD loadedByteIndex = 0;
+
+    // Making the Image part
+    for(int row = 0; row < height; row += 1)
+    {   
+        pixel *tempColumns = malloc(sizeof(pixel) * width);
+        if (tempColumns == NULL)
+        {
+            printf("Error allocating bytes \n");
+            free(tempColumns);
+            for(int i = 0; i < row;i++)
+            {
+                free(image[row]);
+            }
+            free(image);
+            return NULL;
+        }
+        
+        for(int column = 0; column < width; column++)
+        {
+            BYTE currentByte = loadedBytes[loadedByteIndex];
+
+            tempColumns[column].red = pallete->pixels[currentByte].red;
+            tempColumns[column].green = pallete->pixels[currentByte].green;
+            tempColumns[column].blue = pallete->pixels[currentByte].blue;
+            loadedByteIndex ++ ;
+            
+        }
+        
+
+        if(polarity == 0)
+        {
+            image[row] = tempColumns;
+        }
+        else
+        {
+            image[(height - 1) - row] = tempColumns;
+        }
+
+        loadedByteIndex += paddedBytes;
+
+    }
+
+    return image;
+}
+
+pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height)
+{
+    // check if image stored upsidedown
+    BYTE polarity = (height & bit32NuumberSignMask) >> (dwordSizeInBits -1);
+    printf("Polarity: %i \n", polarity);
+
+    if(polarity != positive && polarity != negative)
+    {
+        return NULL;
+    }
+    else if (polarity == 1)
+    {
+        height = ~height + 1; // turn it positive
+    }
+    
+    BYTE paddedBytes = calculatePaddedBytes(abs(width), wordSizeInBits);
+
+    pixel **image = malloc(height * sizeof(pixel*));
+    if(image == NULL)
+    {
+        return NULL;
+    }
+    
+    DWORD currentIndex = 0;
+    // making the image part
+    for(int row = 0; row < height; row++)
+    {
+        pixel *tempColumns = malloc(sizeof(pixel) * width);
+        if (tempColumns == NULL)
+        {
+            printf("Error allocating bytes \n");
+            free(tempColumns);
+            for(int i = 0; i < row;i++)
+            {
+                free(image[row]);
+            }
+            free(image);
+            return NULL;
+        }
+        for(int column = 0; column < width; column++)
+        {
+            // comine two seqential Bytes
+            WORD rawPixel = combine2HexVals(loadedBytes[currentIndex + 1], loadedBytes[currentIndex], byteSizeInBytes); // Rember this is little endian so lowest place value is colected first lmao
+
+            // "Zeros" the values after bitmask applied
+            tempColumns[column].alpha = 0;
+            tempColumns[column].red = ((rawPixel & red16BitMask) >> red16BitmaskShift) * 255 / 31; // * 255 / 31 is to morph it into a byte val
+            tempColumns[column].green = ((rawPixel & green16BitMask) >> green16BitmaskShift) * 255 / 63;  // * 255 / 63 is to morph it into a byte val 
+            tempColumns[column].blue = ((rawPixel & blue16BitMask)) * 255 / 31;  // * 255 / 31 is to morph it into a byte val
+            currentIndex += 2;
+
+        }
+
+         if(polarity == 0)
+        {
+            image[row] = tempColumns;
+        }
+        else
+        {
+            image[(height - 1) - row] = tempColumns;
+        }
+        currentIndex += paddedBytes;
+
+    }
+    printf("paddedBytes: %i\n", paddedBytes);
+    return image;
+}
+
+BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel)
+{
+     // Each row needs to be divisible by the size of dword in terms of bytes if not then it's padded
+    DWORD totalWidthBytes;
+
+    // Genuine witch craft
+    totalWidthBytes = ((width * bitsPerPixel + 7) / 8); //Round up to full Byte
+    DWORD pixelBytes = (totalWidthBytes + 3) & ~3;  // Alligns the byte by dword sizes
+    
+    return pixelBytes - totalWidthBytes; 
+
 }

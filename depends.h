@@ -13,6 +13,7 @@ enum hexBuilderModes{
     bigEndianMode = 1
 };
 enum hexSizesinbits{
+    halfByteSizeInBits = 4,
     byteSizeInBits = 8,
     wordSizeInBits = 16,
     dwordSizeInBits = 32,

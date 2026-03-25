@@ -35,6 +35,10 @@ enum StaticBMPFileOffsetsByteSize
     bmpInfoHeaderSizeOfsetSize = 0x04
 };
 
+enum Polarities{
+    positive = 0,
+    negative = 1
+};
 typedef struct
 {
     DWORD ImageStartOffset;
@@ -57,11 +61,25 @@ typedef struct
 #define BMPSIGNATURE 0x424d //BM
 #define FULLHEADERSIZE 54
 
+enum{bit32NuumberSignMask = 0b10000000000000000000000000000000};
+
+enum bitmasksFor16BitPixels{
+    red16BitMask  = 0b1111100000000000,
+    green16BitMask = 0b0000011111100000,
+    blue16BitMask   = 0b0000000000011111
+};
+enum bitmaskFor16BitPixelsShift{
+    red16BitmaskShift = 11,
+    green16BitmaskShift = 5
+};
+
 bool bitmapSignatureCheck(BYTE *loadedbytes);
 QWORD getBmpAtribute(BYTE *loadedbytes, DWORD startingOffset, BYTE atributeSizeBytes, BYTE mode);
 Pallete get_All_Pallete_Colors(BYTE *loadedBytes,DWORD bitsPerPixel);
 pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete); // Switch between diffrent functopns
-pixel** create_4And8_BitPalletes(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete, DWORD BitsPerPixel);
-
+pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete);
+pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete);
+BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel);
+pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height);
 
 #endif

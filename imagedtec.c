@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
     printf("Width: %i\n", imageData.Width);
     printf("Height: %i\n", imageData.Height);
     printf("BitsPerPixel: %i\n", imageData.BitsPerPixel);
-    printf("Compression: %i\n", imageData.BitsPerPixel);
-    printf("Info header size: %i\n", imageData.BitsPerPixel);
+    printf("Compression: %i\n", imageData.Compression);
+    printf("Info header size: %i\n", imageData.infoHeaderSize);
 
   
     Pallete Colors = get_All_Pallete_Colors(file.Bytes, imageData.BitsPerPixel);
@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
     }
 
 
+    // Getting image pixel data
     pixel **image = form_Image(file.Bytes, imageData.ImageStartOffset, imageData.BitsPerPixel, imageData.Width, imageData.Height, &Colors);
 
     if(image == NULL)
@@ -98,12 +99,16 @@ int main(int argc, char *argv[])
 
     printf("Image last pixel| R: %i G: %i B: %i \n", image[abs(imageData.Height) - 1][imageData.Width - 1].red, image[abs(imageData.Height) -1][imageData.Width - 1].green, image[abs(imageData.Height) -1][imageData.Width - 1].blue);
     printf("R: %i B: %i G: %i \n", Colors.pixels[9].red, Colors.pixels[9].green, Colors.pixels[9].blue);
+
+
+// Free everything
+
     if(Colors.count > 18)
     {
         printf("R: %i B: %i G: %i \n", Colors.pixels[0xc3].red, Colors.pixels[0xc3].green, Colors.pixels[0xc3].blue);
     }
 
-    
+   
     for(int i = 0; i < imageData.Height; i++)
     {
         free(image[i]);
@@ -116,7 +121,7 @@ int main(int argc, char *argv[])
 
 
 
-args argParser(char *argv[], int argc)
+args argParser(char *argv[], int argc) 
 {
     bool foundinput = false;
     bool foundoutput = false;
@@ -130,6 +135,7 @@ args argParser(char *argv[], int argc)
             // Single letters onlt
             if (strlen(argv[i]) == 2)
             {
+                // Using -
                 switch (argv[i][1])
                 {
                     case 'd':
@@ -142,13 +148,19 @@ args argParser(char *argv[], int argc)
                             arguments.outputfile = argv[i+1];
                             i++;
                             foundoutput = true;
+                            break;
+                        }
+                        else if(foundoutput == true) {
+                            printf("More than 1 output given: -o %s\n",argv[i+1]);
                         }
                         else{
-                            printf("no ouptput given or more than 1 output \n");
-                            arguments.sucsess = false;
-                            return arguments;
+                            printf("No argument given after -o \n");
                         }
+                        arguments.sucsess = false;
+                        return arguments;
+
                         break;
+
                     case 'i':
                         if(i+1 < argc && foundinput == false)
                         {
@@ -156,12 +168,17 @@ args argParser(char *argv[], int argc)
                             arguments.inputfile = argv[i+1];
                             foundinput = true;
                             i++;
+                            break;
+                        }
+                        else if(foundinput == true) {
+                            printf("More than 1 output given: -i %s\n",argv[i+1]);
                         }
                         else{
-                            printf("no input given or more than 1 input \n");
-                            arguments.sucsess = false;
-                            return arguments;
+                            printf("No argument given after -i \n");
                         }
+                        arguments.sucsess = false;
+                        return arguments;
+
                         break;
                     
                     default:
