@@ -73,7 +73,11 @@ Pallete get_All_Pallete_Colors(BYTE *loadedBytes,DWORD bitsPerPixel)
 pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete)// Switch between diffrent functopns
 {
 
-    pixel **image = NULL;
+    pixel **image = malloc(height * sizeof(pixel*));
+    if(image == NULL)
+    {
+        return NULL;
+    }
 
     if(bitsPerPixel % 2 != 0 && bitsPerPixel != 1)
     {
@@ -87,14 +91,16 @@ pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, 
     switch (bitsPerPixel)
     {
     case 4:
-        image = create_4BitPallete_Image(allaignedBytes, width, height, pallete);
+        image = create_4BitPallete_Image(allaignedBytes, width, height, pallete, image);
         break;
-    
     case 8:
-        image = create_8BitPallete_Image(allaignedBytes, width, height, pallete);
-    
+        image = create_8BitPallete_Image(allaignedBytes, width, height, pallete, image);
+        break;
     case 16:
-        image = create_16Bit_Image(allaignedBytes, width, height);
+        image = create_16Bit_Image(allaignedBytes, width, height, image);
+        break;
+    case 24:
+        image = create_24Bit_Image(allaignedBytes, width,  height, image);
         break;
     default:
         break;
@@ -114,29 +120,21 @@ BYTE get_Pallete_Index(BYTE byte, BYTE bitMask, BYTE bitsPerPixel, BYTE maskInde
     return formattedByte;
 }
 
-
-pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete)
+pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete, pixel **image)
 {
     // check if image stored upsidedown
-    BYTE polarity = (height & bit32NuumberSignMask) >> (dwordSizeInBits -1); // 0 = positive 1 = negative
+    BYTE polarity = get_Polarity(height);
+
     printf("Polarity: %i \n", polarity);
 
-    if(polarity != positive && polarity != negative)
+    if((height = revaluate_height(height)) == 0)
     {
         return NULL;
-    }
-    else if (polarity == negative)
-    {
-        height = ~height + 1; // turn it positive
     }
 
     BYTE paddedBytes = calculatePaddedBytes(abs(width), halfByteSizeInBits);
 
-    pixel **image = malloc(height * sizeof(pixel*));
-    if(image == NULL)
-    {
-        return NULL;
-    }
+   
 
     DWORD loadedByteIndex = 0;
     BYTE BitMaksModeDefault = 1; // Upper part of the byte
@@ -196,7 +194,7 @@ pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
         }
         
 
-        if(polarity == 0)
+        if(polarity == 1)
         {
             image[row] = tempColumns;
         }
@@ -212,28 +210,19 @@ pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
     return image;
 }
 
-pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete)
+pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete, pixel **image)
 {
     // check if image stored upsidedown
-    BYTE polarity = (height & bit32NuumberSignMask) >> (dwordSizeInBits -1);
+    BYTE polarity = get_Polarity(height);
+
     printf("Polarity: %i \n", polarity);
 
-    if(polarity > 1 || polarity < 0)
+    if((height = revaluate_height(height)) == 0)
     {
         return NULL;
-    }
-    if (polarity == 1)
-    {
-        height = ~height + 1; // turn it positive
     }
 
     BYTE paddedBytes = calculatePaddedBytes(abs(width), byteSizeInBits);
-
-    pixel **image = malloc(height * sizeof(pixel*));
-    if(image == NULL)
-    {
-        return NULL;
-    }
 
     DWORD loadedByteIndex = 0;
 
@@ -265,7 +254,7 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
         }
         
 
-        if(polarity == 0)
+        if(polarity == 1)
         {
             image[row] = tempColumns;
         }
@@ -281,29 +270,19 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
     return image;
 }
 
-pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height)
+pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, pixel **image)
 {
     // check if image stored upsidedown
-    BYTE polarity = (height & bit32NuumberSignMask) >> (dwordSizeInBits -1);
+    BYTE polarity = get_Polarity(height);
     printf("Polarity: %i \n", polarity);
 
-    if(polarity != positive && polarity != negative)
+    if((height = revaluate_height(height)) == 0)
     {
         return NULL;
     }
-    else if (polarity == 1)
-    {
-        height = ~height + 1; // turn it positive
-    }
-    
+
     BYTE paddedBytes = calculatePaddedBytes(abs(width), wordSizeInBits);
 
-    pixel **image = malloc(height * sizeof(pixel*));
-    if(image == NULL)
-    {
-        return NULL;
-    }
-    
     DWORD currentIndex = 0;
     // making the image part
     for(int row = 0; row < height; row++)
@@ -334,7 +313,7 @@ pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 
         }
 
-         if(polarity == 0)
+         if(polarity == 1)
         {
             image[row] = tempColumns;
         }
@@ -349,6 +328,74 @@ pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
     return image;
 }
 
+pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, pixel **image)
+{
+     BYTE polarity = get_Polarity(height);
+
+    printf("Polarity: %i \n", polarity);
+
+    if((height = revaluate_height(height)) == 0)
+    {
+        return NULL;
+    }
+
+    BYTE paddedBytes = calculatePaddedBytes(abs(width), 24);
+
+    printf("Loaded bytes 1: %x \n", loadedBytes[0]);
+    printf("Loaded bytes 2: %x \n", loadedBytes[1]);
+    printf("Loaded bytes 3: %x \n", loadedBytes[2]);
+
+
+    DWORD currentIndex = 0;
+    // making the image part
+    for(int row = 0; row < height; row++)
+    {
+        pixel *tempColumns = malloc(sizeof(pixel) * width);
+        if (tempColumns == NULL)
+        {
+            printf("Error allocating bytes \n");
+            free(tempColumns);
+            for(int i = 0; i < row;i++)
+            {
+                free(image[row]);
+            }
+            free(image);
+            return NULL;
+        }
+        for(int column = 0; column < width; column++)
+        {
+            // comine two seqential Bytes
+
+            // "Zeros" the values after bitmask applied
+            tempColumns[column].alpha = 0;
+            tempColumns[column].blue = loadedBytes[currentIndex];
+            tempColumns[column].green = loadedBytes[currentIndex + 1];
+            tempColumns[column].red =  loadedBytes[currentIndex + 2];
+
+            // printf("CurentRIndex: %i \n", currentIndex);
+            // printf("Debug: R: %x   G: %x,   B: %x \n",tempColumns[column].red, tempColumns[column].green, tempColumns[column].blue);
+            currentIndex += 3;
+
+        }
+
+
+        if(polarity == 1)
+        {
+            image[row] = tempColumns;
+        }
+        else
+        {
+            image[(height - 1) - row] = tempColumns;
+        }
+        currentIndex += paddedBytes;
+
+    }
+    printf("paddedBytes: %i\n", paddedBytes);
+    return image;
+
+    return NULL;
+}
+
 BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel)
 {
      // Each row needs to be divisible by the size of dword in terms of bytes if not then it's padded
@@ -359,5 +406,34 @@ BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel)
     DWORD pixelBytes = (totalWidthBytes + 3) & ~3;  // Alligns the byte by dword sizes
     
     return pixelBytes - totalWidthBytes; 
+
+}
+
+void write_Image(pixel **imageArray, bitmapfile bitmapData)
+{
+    FILE image = fopen("Output.bmp", "wb");
+
+}
+
+
+BYTE get_Polarity(signedDWORD height)
+{
+    return (height & bit32NuumberSignMask) >> (dwordSizeInBits -1);
+}
+
+DWORD revaluate_height(signedDWORD height)
+{
+    BYTE polarity = 0;
+
+    if(polarity != positive && polarity != negative)
+    {
+        return 0;
+    }
+    else if (polarity == negative)
+    {
+        return height = ~height + 1; // turn it positive
+    }
+
+    return height;
 
 }

@@ -37,8 +37,6 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-
-
     loadedfile file = loadFile(parsedargs.inputfile);
     if (file.workingFile == false)
     {
@@ -96,9 +94,11 @@ int main(int argc, char *argv[])
         free(file.Bytes);
     }
     
+    int finheight = imageData.Height - 1;
+    int finwidth = imageData.Width - 1;
 
-    printf("Image last pixel| R: %i G: %i B: %i \n", image[abs(imageData.Height) - 1][imageData.Width - 1].red, image[abs(imageData.Height) -1][imageData.Width - 1].green, image[abs(imageData.Height) -1][imageData.Width - 1].blue);
-    printf("R: %i B: %i G: %i \n", Colors.pixels[9].red, Colors.pixels[9].green, Colors.pixels[9].blue);
+    printf("Image last pixel| R: %i G: %i B: %i \n", image[abs(finheight)][finwidth].red, image[abs(finheight)][finwidth].green, image[abs(finheight)][finwidth].blue);
+    printf("R: %i B: %i G: %i \n", Colors.pixels[0xc3].red, Colors.pixels[0xc3].green, Colors.pixels[0xc3].blue);
 
 
 // Free everything
