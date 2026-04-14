@@ -57,14 +57,20 @@ int main(int argc, char *argv[])
 
     bitmapfile imageData;
 
-    imageData.ImageStartOffset = 0;
-
     imageData.ImageStartOffset = getBmpAtribute(file.Bytes, bmpPixelDataOffset, bmpPixelDataOffsetSize, littleEndianMode);
+    imageData.FileSize = getBmpAtribute(file.Bytes, bmpFileSizeOffset, bmpFileSizeOffsetSize, littleEndianMode);
+    imageData.Reserved = getBmpAtribute(file.Bytes, bmpReservedOffset, bmpReservedOffsetSize, littleEndianMode);
+    imageData.HeaderSize = getBmpAtribute(file.Bytes, bmpHeaderSizeOffset, bmpHeaderSizeOffsetSize, littleEndianMode);
+    imageData.Planes = getBmpAtribute(file.Bytes, bmpPlanesOffset, bmpPlaneOffsetSize, littleEndianMode);
+    imageData.ImageSize = getBmpAtribute(file.Bytes, bmpImageSizeOffset, bmpImageSizeOffsetSize, littleEndianMode);
+    imageData.XPixelsPerM = getBmpAtribute(file.Bytes, bmpXPixelsPerMOffset, bmpXPixelsPerMOffsetSize, littleEndianMode);
+    imageData.YPixelsPerM = getBmpAtribute(file.Bytes, bmpYPixelsPerMOffset, bmpYPixelsPerMOffsetSize, littleEndianMode);
+    imageData.ColorsUsed = getBmpAtribute(file.Bytes, bmpColorsUsedOffset, bmpColorsUsedMOffsetSize, littleEndianMode);
+    imageData.ImportantColors = getBmpAtribute(file.Bytes, bmpImportantCollorsOffset, bmpImportantColorsMOffsetSize, littleEndianMode);
     imageData.Width = getBmpAtribute(file.Bytes, bmpWidthOffset, bmpWidthOffsetSize, littleEndianMode);
     imageData.Height = getBmpAtribute(file.Bytes, bmpHeightOffset, bmpHeightOffsetSize, littleEndianMode);
     imageData.BitsPerPixel = getBmpAtribute(file.Bytes, bmpBitsPerPixeltOffset, bmpBitsPerPixelOffsetSize, littleEndianMode);
     imageData.Compression = getBmpAtribute(file.Bytes, bmpCompressionOffset, bmpCompressionOffsetSize, littleEndianMode);
-    imageData.infoHeaderSize = getBmpAtribute(file.Bytes, bmpInfoHeaderSizeOfset, bmpInfoHeaderSizeOfsetSize, littleEndianMode);
 
     // Debuging for now Should change latter
     printf("imageOffset: 0x%x\n", imageData.ImageStartOffset);
@@ -72,7 +78,16 @@ int main(int argc, char *argv[])
     printf("Height: %i\n", imageData.Height);
     printf("BitsPerPixel: %i\n", imageData.BitsPerPixel);
     printf("Compression: %i\n", imageData.Compression);
-    printf("Info header size: %i\n", imageData.infoHeaderSize);
+    printf("FileSize: %i\n", imageData.FileSize);
+    printf("Reserved: %i\n", imageData.Reserved);
+    printf("HeaderSize: %i\n", imageData.HeaderSize);
+    printf("ImageSize: %i\n", imageData.ImageSize);
+    printf("XPixelsPerM: %i\n", imageData.XPixelsPerM);
+    printf("YPixelsPerM: %i\n", imageData.YPixelsPerM);
+    printf("ColorsUsed: %i\n", imageData.ColorsUsed);
+    printf("ImportantColors: %i\n", imageData.ImportantColors);
+    printf("Planes: %i\n", imageData.Planes);
+  
 
   
     Pallete Colors = get_All_Pallete_Colors(file.Bytes, imageData.BitsPerPixel);

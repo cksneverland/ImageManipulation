@@ -15,24 +15,41 @@ enum StaticBMPFileOffsets
 {
     bmpSignatureStart = 0x00,
     bmpSignatureEnd = 0x01,
+    bmpFileSizeOffset = 0x02,
+    bmpReservedOffset = 0x06,
     bmpPixelDataOffset = 0x0A,
+    bmpHeaderSizeOffset = 0x0E,
     bmpWidthOffset = 0x12,
     bmpHeightOffset = 0x16,
+    bmpPlanesOffset = 0x1A,
     bmpBitsPerPixeltOffset = 0x1c,
     bmpCompressionOffset = 0x1E,
-    bmpInfoHeaderSizeOfset = 0x0E
-
+    bmpImageSizeOffset = 0x22,
+    bmpXPixelsPerMOffset = 0x26,
+    bmpYPixelsPerMOffset = 0x2A,
+    bmpColorsUsedOffset = 0x2E,
+    bmpImportantCollorsOffset = 0x32,
+    bmpColorTablesOffset = 0x36,
 };
 
 enum StaticBMPFileOffsetsByteSize
 {
-    bmpSignatureSize = 0x02,
+    bmpCompressionOffsetSize = 0x04,
+    bmpFileSizeOffsetSize = 0x04,
+    bmpHeaderSizeOffsetSize = 0x04,
+    bmpReservedOffsetSize = 0x4,
     bmpPixelDataOffsetSize = 0x04,
     bmpWidthOffsetSize = 0x04,
     bmpHeightOffsetSize = 0x04,
-    bmpBitsPerPixelOffsetSize = 0x02,
-    bmpCompressionOffsetSize = 0x04,
-    bmpInfoHeaderSizeOfsetSize = 0x04
+    bmpImageSizeOffsetSize = 0x04,
+    bmpXPixelsPerMOffsetSize = 0x04,
+    bmpYPixelsPerMOffsetSize = 0x04,
+    bmpColorsUsedMOffsetSize = 0x04,
+    bmpImportantColorsMOffsetSize = 0x04,
+    bmpSignatureSize = 0x02,
+    bmpPlaneOffsetSize = 0x02,
+    bmpBitsPerPixelOffsetSize = 0x02
+    
 };
 
 enum Polarities{
@@ -57,13 +74,22 @@ enum bitmaskFor16BitPixelsShift{
 typedef struct
 {
     DWORD ImageStartOffset;
+    DWORD FileSize;
+    DWORD Reserved;
+    DWORD HeaderSize;
     signedDWORD Width;
     signedDWORD Height;
+    DWORD Planes;
     DWORD Compression;
+    DWORD ImageSize;
+    DWORD XPixelsPerM;
+    DWORD YPixelsPerM;
+    DWORD ColorsUsed;
+    DWORD ImportantColors;
     WORD BitsPerPixel;
     BYTE paddingSize;
-    DWORD infoHeaderSize;
-
+    pixel **ImagePixels;
+    pixel *Pallete;
 }bitmapfile;
 
 typedef struct 
