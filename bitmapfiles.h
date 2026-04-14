@@ -79,11 +79,12 @@ typedef struct
 bool bitmapSignatureCheck(BYTE *loadedbytes);
 QWORD getBmpAtribute(BYTE *loadedbytes, DWORD startingOffset, BYTE atributeSizeBytes, BYTE mode);
 Pallete get_All_Pallete_Colors(BYTE *loadedBytes,DWORD bitsPerPixel);
-pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete); // Switch between diffrent functopns
+pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, WORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete); // Switch between diffrent functopns
 pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete, pixel **image);
 pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, Pallete *pallete, pixel **image);
 pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, pixel **image);
 pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, pixel **image);
+pixel** create_32Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, pixel **image);
 BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel);
 BYTE get_Polarity(signedDWORD height);
 DWORD revaluate_height(signedDWORD height);

@@ -70,7 +70,7 @@ Pallete get_All_Pallete_Colors(BYTE *loadedBytes,DWORD bitsPerPixel)
 }
 
 // Intermidiary to all the other form image functions use this one only
-pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete)// Switch between diffrent functopns
+pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, WORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete)// Switch between diffrent functopns
 {
 
     pixel **image = malloc(height * sizeof(pixel*));
@@ -101,6 +101,9 @@ pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, DWORD bitsPerPixel, 
         break;
     case 24:
         image = create_24Bit_Image(allaignedBytes, width,  height, image);
+        break;
+    case 32:
+        image = create_32Bit_Image(allaignedBytes, width,  height, image);
         break;
     default:
         break;
@@ -339,11 +342,7 @@ pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
         return NULL;
     }
 
-    BYTE paddedBytes = calculatePaddedBytes(abs(width), 24);
-
-    printf("Loaded bytes 1: %x \n", loadedBytes[0]);
-    printf("Loaded bytes 2: %x \n", loadedBytes[1]);
-    printf("Loaded bytes 3: %x \n", loadedBytes[2]);
+    BYTE paddedBytes = calculatePaddedBytes(abs(width), 24); // 24 fro 24 bits lmao
 
 
     DWORD currentIndex = 0;
@@ -392,9 +391,71 @@ pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
     }
     printf("paddedBytes: %i\n", paddedBytes);
     return image;
-
-    return NULL;
 }
+
+pixel** create_32Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, pixel **image)
+{
+     BYTE polarity = get_Polarity(height);
+
+    printf("Polarity: %i \n", polarity);
+
+    if((height = revaluate_height(height)) == 0)
+    {
+        return NULL;
+    }
+
+    BYTE paddedBytes = calculatePaddedBytes(abs(width), dwordSizeInBits); 
+
+
+    DWORD currentIndex = 0;
+    // making the image part
+    for(int row = 0; row < height; row++)
+    {
+        pixel *tempColumns = malloc(sizeof(pixel) * width);
+        if (tempColumns == NULL)
+        {
+            printf("Error allocating bytes \n");
+            free(tempColumns);
+            for(int i = 0; i < row;i++)
+            {
+                free(image[row]);
+            }
+            free(image);
+            return NULL;
+        }
+        for(int column = 0; column < width; column++)
+        {
+            // comine two seqential Bytes
+
+            // "Zeros" the values after bitmask applied
+            
+            tempColumns[column].blue = loadedBytes[currentIndex];
+            tempColumns[column].green = loadedBytes[currentIndex + 1];
+            tempColumns[column].red =  loadedBytes[currentIndex + 2];
+            tempColumns[column].alpha = loadedBytes[currentIndex + 3];
+
+            // printf("CurentRIndex: %i \n", currentIndex);
+            // printf("Debug: R: %x   G: %x,   B: %x \n",tempColumns[column].red, tempColumns[column].green, tempColumns[column].blue);
+            currentIndex += 4;
+
+        }
+
+
+        if(polarity == 1)
+        {
+            image[row] = tempColumns;
+        }
+        else
+        {
+            image[(height - 1) - row] = tempColumns;
+        }
+        currentIndex += paddedBytes;
+
+    }
+    printf("paddedBytes: %i\n", paddedBytes);
+    return image;
+}
+
 
 BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel)
 {
@@ -408,13 +469,6 @@ BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel)
     return pixelBytes - totalWidthBytes; 
 
 }
-
-void write_Image(pixel **imageArray, bitmapfile bitmapData)
-{
-    FILE image = fopen("Output.bmp", "wb");
-
-}
-
 
 BYTE get_Polarity(signedDWORD height)
 {

@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     int finheight = imageData.Height - 1;
     int finwidth = imageData.Width - 1;
 
-    printf("Image last pixel| R: %i G: %i B: %i \n", image[abs(finheight)][finwidth].red, image[abs(finheight)][finwidth].green, image[abs(finheight)][finwidth].blue);
+    printf("Image last pixel| R: %i G: %i B: %i  A:%i \n", image[abs(finheight)][finwidth].red, image[abs(finheight)][finwidth].green, image[abs(finheight)][finwidth].blue, image[abs(finheight)][finwidth].alpha);
     printf("R: %i B: %i G: %i \n", Colors.pixels[0xc3].red, Colors.pixels[0xc3].green, Colors.pixels[0xc3].blue);
 
 
