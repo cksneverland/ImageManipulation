@@ -197,7 +197,7 @@ pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
         }
         
 
-        if(polarity == 1)
+        if(polarity == 0)
         {
             image[row] = tempColumns;
         }
@@ -257,7 +257,7 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
         }
         
 
-        if(polarity == 1)
+        if(polarity == 0)
         {
             image[row] = tempColumns;
         }
@@ -316,7 +316,7 @@ pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 
         }
 
-         if(polarity == 1)
+         if(polarity == 0)
         {
             image[row] = tempColumns;
         }
@@ -378,7 +378,7 @@ pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
         }
 
 
-        if(polarity == 1)
+        if(polarity == 0)
         {
             image[row] = tempColumns;
         }
@@ -441,7 +441,7 @@ pixel** create_32Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
         }
 
 
-        if(polarity == 1)
+        if(polarity == 0)
         {
             image[row] = tempColumns;
         }
@@ -456,6 +456,58 @@ pixel** create_32Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
     return image;
 }
 
+void create_image_file(bitmapfile bitmap, char *filename)
+{
+    FILE *imageFile = fopen(filename, "wb");
+    if (imageFile == NULL)
+    {
+        return;
+    }
+
+    // Modify some values to corespond to what the bitmap will be
+    bitmap.ImageSize = (bitmap.Height * bitmap.Width) * dwordSizeInBytes;
+    bitmap.FileSize = bitmap.ImageSize +  54;// size of full file header
+    bitmap.ImageStartOffset = 54; // size 54 but like we count from 0
+    bitmap.BitsPerPixel = 32;
+    BYTE padding = calculatePaddedBytes(bitmap.Width, dwordSizeInBits);
+    printf("Padding: %i \n", padding);
+    int infoHeaderSize = 40;
+    const BYTE zero = 0;
+
+    fwrite("BM", 2, 1, imageFile);
+    printf("NewFileSize: %i\n", bitmap.FileSize);
+    fwrite(&bitmap.FileSize, 4, 1, imageFile);
+    fwrite(&bitmap.Reserved, 4, 1, imageFile);
+    fwrite(&bitmap.ImageStartOffset, 4, 1, imageFile);
+    fwrite(&infoHeaderSize, 4, 1, imageFile);// bit map info header size always 40 change later when i'm bored
+    fwrite(&bitmap.Width, 4, 1, imageFile);
+    fwrite(&bitmap.Height, 4, 1, imageFile);
+    fwrite(&bitmap.Planes, 2, 1, imageFile);
+    fwrite(&bitmap.BitsPerPixel, 2, 1, imageFile);
+    fwrite(&bitmap.Compression, 4, 1, imageFile);
+    fwrite(&bitmap.ImageSize, 4, 1, imageFile);
+    fwrite(&bitmap.XPixelsPerM, 4, 1, imageFile);
+    fwrite(&bitmap.YPixelsPerM, 4, 1, imageFile);
+    fwrite(&bitmap.ColorsUsed, 4, 1, imageFile);
+    fwrite(&bitmap.ImportantColors, 4, 1, imageFile);
+
+    for (int i = 0; i < bitmap.Height; i++){
+        for(int k = 0; k < bitmap.Width; k++){
+            fwrite(&bitmap.ImagePixels[i][k], sizeof(bitmap.ImagePixels[i][k]), 1, imageFile);
+        }
+
+        if (padding > 0){
+            for(int j = 0; j < padding; j++){
+                fwrite(&zero, 1, 1, imageFile);
+            }
+        }
+    }
+
+
+
+
+    fclose(imageFile);
+}
 
 BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel)
 {

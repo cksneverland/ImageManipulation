@@ -100,9 +100,9 @@ int main(int argc, char *argv[])
 
 
     // Getting image pixel data
-    pixel **image = form_Image(file.Bytes, imageData.ImageStartOffset, imageData.BitsPerPixel, imageData.Width, imageData.Height, &Colors);
+    imageData.ImagePixels = form_Image(file.Bytes, imageData.ImageStartOffset, imageData.BitsPerPixel, imageData.Width, imageData.Height, &Colors);
 
-    if(image == NULL)
+    if(imageData.ImagePixels == NULL)
     {
         printf("Erororroroor \n");
         free(Colors.pixels);    
@@ -112,9 +112,10 @@ int main(int argc, char *argv[])
     int finheight = imageData.Height - 1;
     int finwidth = imageData.Width - 1;
 
-    printf("Image last pixel| R: %i G: %i B: %i  A:%i \n", image[abs(finheight)][finwidth].red, image[abs(finheight)][finwidth].green, image[abs(finheight)][finwidth].blue, image[abs(finheight)][finwidth].alpha);
+    printf("Image last pixel| R: %i G: %i B: %i  A:%i \n", imageData.ImagePixels[abs(finheight)][finwidth].red, imageData.ImagePixels[abs(finheight)][finwidth].green, imageData.ImagePixels[abs(finheight)][finwidth].blue, imageData.ImagePixels[abs(finheight)][finwidth].alpha);
     printf("R: %i B: %i G: %i \n", Colors.pixels[0xc3].red, Colors.pixels[0xc3].green, Colors.pixels[0xc3].blue);
 
+    create_image_file(imageData, "test.bmp");
 
 // Free everything
 
@@ -126,9 +127,9 @@ int main(int argc, char *argv[])
    
     for(int i = 0; i < imageData.Height; i++)
     {
-        free(image[i]);
+        free(imageData.ImagePixels[i]);
     }
-    free(image);
+    free(imageData.ImagePixels);
     free(Colors.pixels);    
     free(file.Bytes);
 

@@ -60,14 +60,14 @@ enum Polarities{
 enum{bit32NuumberSignMask = 0b10000000000000000000000000000000};
 
 enum bitmasksFor16BitPixels{
-    red16BitMask   = 0b1111100000000000,
-    green16BitMask = 0b0000011111100000,
+    red16BitMask   = 0b0111110000000000,
+    green16BitMask = 0b0000001111100000,
     blue16BitMask  = 0b0000000000011111
 };
 
 enum bitmaskFor16BitPixelsShift{
-    red16BitmaskShift   = 11,
-    green16BitmaskShift = 5,
+    red16BitmaskShift   = 10,
+    green16BitmaskShift = 4,
     blue16BitmaskShift = 3
 };
 
@@ -89,7 +89,6 @@ typedef struct
     WORD BitsPerPixel;
     BYTE paddingSize;
     pixel **ImagePixels;
-    pixel *Pallete;
 }bitmapfile;
 
 typedef struct 
@@ -114,6 +113,6 @@ pixel** create_32Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel);
 BYTE get_Polarity(signedDWORD height);
 DWORD revaluate_height(signedDWORD height);
-
+void create_image_file(bitmapfile bitmap, char *filename);
 
 #endif
