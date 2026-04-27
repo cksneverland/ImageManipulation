@@ -1,8 +1,31 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "bitmapfiles.h"
 #include<stdio.h>
 #include<stdlib.h>
 
 const BYTE FourBitMaskArray[2] = {fourBitFirstPixelMask, fourBitSecondPixelMask};
+
+bitmapfile get_Bitmapfile_Data(loadedfile file){
+    bitmapfile imageData;
+
+    imageData.ImageStartOffset = getBmpAtribute(file.Bytes, bmpPixelDataOffset, bmpPixelDataOffsetSize, littleEndianMode);
+    imageData.FileSize = getBmpAtribute(file.Bytes, bmpFileSizeOffset, bmpFileSizeOffsetSize, littleEndianMode);
+    imageData.Reserved = getBmpAtribute(file.Bytes, bmpReservedOffset, bmpReservedOffsetSize, littleEndianMode);
+    imageData.HeaderSize = getBmpAtribute(file.Bytes, bmpHeaderSizeOffset, bmpHeaderSizeOffsetSize, littleEndianMode);
+    imageData.Planes = getBmpAtribute(file.Bytes, bmpPlanesOffset, bmpPlaneOffsetSize, littleEndianMode);
+    imageData.ImageSize = getBmpAtribute(file.Bytes, bmpImageSizeOffset, bmpImageSizeOffsetSize, littleEndianMode);
+    imageData.XPixelsPerM = getBmpAtribute(file.Bytes, bmpXPixelsPerMOffset, bmpXPixelsPerMOffsetSize, littleEndianMode);
+    imageData.YPixelsPerM = getBmpAtribute(file.Bytes, bmpYPixelsPerMOffset, bmpYPixelsPerMOffsetSize, littleEndianMode);
+    imageData.ColorsUsed = getBmpAtribute(file.Bytes, bmpColorsUsedOffset, bmpColorsUsedMOffsetSize, littleEndianMode);
+    imageData.ImportantColors = getBmpAtribute(file.Bytes, bmpImportantCollorsOffset, bmpImportantColorsMOffsetSize, littleEndianMode);
+    imageData.Width = getBmpAtribute(file.Bytes, bmpWidthOffset, bmpWidthOffsetSize, littleEndianMode);
+    imageData.Height = getBmpAtribute(file.Bytes, bmpHeightOffset, bmpHeightOffsetSize, littleEndianMode);
+    imageData.BitsPerPixel = getBmpAtribute(file.Bytes, bmpBitsPerPixeltOffset, bmpBitsPerPixelOffsetSize, littleEndianMode);
+    imageData.Compression = getBmpAtribute(file.Bytes, bmpCompressionOffset, bmpCompressionOffsetSize, littleEndianMode);
+
+    return imageData;
+}
 
 bool bitmapSignatureCheck(BYTE *loadedbytes)
 {
@@ -72,8 +95,10 @@ Pallete get_All_Pallete_Colors(BYTE *loadedBytes,DWORD bitsPerPixel)
 // Intermidiary to all the other form image functions use this one only
 pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, WORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete)// Switch between diffrent functopns
 {
+    int corrected_height = abs(height);
 
-    pixel **image = malloc(height * sizeof(pixel*));
+    pixel **image = malloc(corrected_height * sizeof(pixel*));
+
     if(image == NULL)
     {
         return NULL;
@@ -86,7 +111,6 @@ pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, WORD bitsPerPixel, s
     }
 
     BYTE *allaignedBytes = &loadedBytes[startingOffset];
-
 
     switch (bitsPerPixel)
     {
@@ -217,6 +241,7 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
 {
     // check if image stored upsidedown
     BYTE polarity = get_Polarity(height);
+
 
     printf("Polarity: %i \n", polarity);
 
@@ -465,7 +490,7 @@ void create_image_file(bitmapfile bitmap, char *filename)
     }
 
     // Modify some values to corespond to what the bitmap will be
-    bitmap.ImageSize = (bitmap.Height * bitmap.Width) * dwordSizeInBytes;
+    bitmap.ImageSize = (abs(bitmap.Height) * bitmap.Width) * dwordSizeInBytes;
     bitmap.FileSize = bitmap.ImageSize +  54;// size of full file header
     bitmap.ImageStartOffset = 54; // size 54 but like we count from 0
     bitmap.BitsPerPixel = 32;
@@ -474,6 +499,8 @@ void create_image_file(bitmapfile bitmap, char *filename)
     int infoHeaderSize = 40;
     const BYTE zero = 0;
 
+    signedDWORD absHeight = abs(bitmap.Height);
+
     fwrite("BM", 2, 1, imageFile);
     printf("NewFileSize: %i\n", bitmap.FileSize);
     fwrite(&bitmap.FileSize, 4, 1, imageFile);
@@ -481,7 +508,7 @@ void create_image_file(bitmapfile bitmap, char *filename)
     fwrite(&bitmap.ImageStartOffset, 4, 1, imageFile);
     fwrite(&infoHeaderSize, 4, 1, imageFile);// bit map info header size always 40 change later when i'm bored
     fwrite(&bitmap.Width, 4, 1, imageFile);
-    fwrite(&bitmap.Height, 4, 1, imageFile);
+    fwrite(&absHeight, 4, 1, imageFile);
     fwrite(&bitmap.Planes, 2, 1, imageFile);
     fwrite(&bitmap.BitsPerPixel, 2, 1, imageFile);
     fwrite(&bitmap.Compression, 4, 1, imageFile);
@@ -491,7 +518,7 @@ void create_image_file(bitmapfile bitmap, char *filename)
     fwrite(&bitmap.ColorsUsed, 4, 1, imageFile);
     fwrite(&bitmap.ImportantColors, 4, 1, imageFile);
 
-    for (int i = 0; i < bitmap.Height; i++){
+    for (int i = 0; i < abs(bitmap.Height); i++){
         for(int k = 0; k < bitmap.Width; k++){
             fwrite(&bitmap.ImagePixels[i][k], sizeof(bitmap.ImagePixels[i][k]), 1, imageFile);
         }
@@ -524,12 +551,18 @@ BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel)
 
 BYTE get_Polarity(signedDWORD height)
 {
-    return (height & bit32NuumberSignMask) >> (dwordSizeInBits -1);
+    if (height < 0)
+    {
+        return 1;
+    }
+
+    return 0;
 }
 
 DWORD revaluate_height(signedDWORD height)
 {
-    BYTE polarity = 0;
+    BYTE polarity = get_Polarity(height);
+    printf("Polarity: %i \n",polarity);
 
     if(polarity != positive && polarity != negative)
     {
@@ -537,7 +570,7 @@ DWORD revaluate_height(signedDWORD height)
     }
     else if (polarity == negative)
     {
-        return height = ~height + 1; // turn it positive
+        return abs(height); // turn it positive
     }
 
     return height;

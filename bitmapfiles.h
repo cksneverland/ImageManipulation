@@ -114,5 +114,6 @@ BYTE calculatePaddedBytes(DWORD width, DWORD bitsPerPixel);
 BYTE get_Polarity(signedDWORD height);
 DWORD revaluate_height(signedDWORD height);
 void create_image_file(bitmapfile bitmap, char *filename);
+bitmapfile get_Bitmapfile_Data(loadedfile file);
 
 #endif

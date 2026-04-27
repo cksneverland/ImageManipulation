@@ -55,22 +55,8 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    bitmapfile imageData;
-
-    imageData.ImageStartOffset = getBmpAtribute(file.Bytes, bmpPixelDataOffset, bmpPixelDataOffsetSize, littleEndianMode);
-    imageData.FileSize = getBmpAtribute(file.Bytes, bmpFileSizeOffset, bmpFileSizeOffsetSize, littleEndianMode);
-    imageData.Reserved = getBmpAtribute(file.Bytes, bmpReservedOffset, bmpReservedOffsetSize, littleEndianMode);
-    imageData.HeaderSize = getBmpAtribute(file.Bytes, bmpHeaderSizeOffset, bmpHeaderSizeOffsetSize, littleEndianMode);
-    imageData.Planes = getBmpAtribute(file.Bytes, bmpPlanesOffset, bmpPlaneOffsetSize, littleEndianMode);
-    imageData.ImageSize = getBmpAtribute(file.Bytes, bmpImageSizeOffset, bmpImageSizeOffsetSize, littleEndianMode);
-    imageData.XPixelsPerM = getBmpAtribute(file.Bytes, bmpXPixelsPerMOffset, bmpXPixelsPerMOffsetSize, littleEndianMode);
-    imageData.YPixelsPerM = getBmpAtribute(file.Bytes, bmpYPixelsPerMOffset, bmpYPixelsPerMOffsetSize, littleEndianMode);
-    imageData.ColorsUsed = getBmpAtribute(file.Bytes, bmpColorsUsedOffset, bmpColorsUsedMOffsetSize, littleEndianMode);
-    imageData.ImportantColors = getBmpAtribute(file.Bytes, bmpImportantCollorsOffset, bmpImportantColorsMOffsetSize, littleEndianMode);
-    imageData.Width = getBmpAtribute(file.Bytes, bmpWidthOffset, bmpWidthOffsetSize, littleEndianMode);
-    imageData.Height = getBmpAtribute(file.Bytes, bmpHeightOffset, bmpHeightOffsetSize, littleEndianMode);
-    imageData.BitsPerPixel = getBmpAtribute(file.Bytes, bmpBitsPerPixeltOffset, bmpBitsPerPixelOffsetSize, littleEndianMode);
-    imageData.Compression = getBmpAtribute(file.Bytes, bmpCompressionOffset, bmpCompressionOffsetSize, littleEndianMode);
+    bitmapfile imageData = get_Bitmapfile_Data(file);
+    
 
     // Debuging for now Should change latter
     printf("imageOffset: 0x%x\n", imageData.ImageStartOffset);
@@ -109,7 +95,7 @@ int main(int argc, char *argv[])
         free(file.Bytes);
     }
     
-    int finheight = imageData.Height - 1;
+    int finheight = abs(imageData.Height) - 1;
     int finwidth = imageData.Width - 1;
 
     printf("Image last pixel| R: %i G: %i B: %i  A:%i \n", imageData.ImagePixels[abs(finheight)][finwidth].red, imageData.ImagePixels[abs(finheight)][finwidth].green, imageData.ImagePixels[abs(finheight)][finwidth].blue, imageData.ImagePixels[abs(finheight)][finwidth].alpha);
