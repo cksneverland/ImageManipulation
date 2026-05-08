@@ -115,5 +115,6 @@ BYTE get_Polarity(signedDWORD height);
 DWORD revaluate_height(signedDWORD height);
 void create_image_file(bitmapfile bitmap, char *filename);
 bitmapfile get_Bitmapfile_Data(loadedfile file);
+void free_Image_Pixels(pixel ** imagePixels, signedDWORD height);
 
 #endif

@@ -1,11 +1,13 @@
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "depends.h"
-#include"bitmapfiles.h"
-#include <stdbool.h>
+#include "Headers/depends.h"
+#include "Headers/bitmapfiles.h"
+#include "Headers/filters.h"
+#include <stdbool.h> 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 typedef struct
 {
@@ -101,6 +103,14 @@ int main(int argc, char *argv[])
     printf("Image last pixel| R: %i G: %i B: %i  A:%i \n", imageData.ImagePixels[abs(finheight)][finwidth].red, imageData.ImagePixels[abs(finheight)][finwidth].green, imageData.ImagePixels[abs(finheight)][finwidth].blue, imageData.ImagePixels[abs(finheight)][finwidth].alpha);
     printf("R: %i B: %i G: %i \n", Colors.pixels[0xc3].red, Colors.pixels[0xc3].green, Colors.pixels[0xc3].blue);
 
+
+    //grayscaleFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
+    boxBlurFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width, 3);
+
+    
+
+
+    //create_image_file(imageData, "test.bmp");
     create_image_file(imageData, "test.bmp");
 
 // Free everything
@@ -110,12 +120,9 @@ int main(int argc, char *argv[])
         printf("R: %i B: %i G: %i \n", Colors.pixels[0xc3].red, Colors.pixels[0xc3].green, Colors.pixels[0xc3].blue);
     }
 
-   
-    for(int i = 0; i < imageData.Height; i++)
-    {
-        free(imageData.ImagePixels[i]);
-    }
-    free(imageData.ImagePixels);
+
+    free_Image_Pixels(imageData.ImagePixels, imageData.Height);
+
     free(Colors.pixels);    
     free(file.Bytes);
 

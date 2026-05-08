@@ -95,9 +95,9 @@ Pallete get_All_Pallete_Colors(BYTE *loadedBytes,DWORD bitsPerPixel)
 // Intermidiary to all the other form image functions use this one only
 pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, WORD bitsPerPixel, signedDWORD width, signedDWORD height, Pallete *pallete)// Switch between diffrent functopns
 {
-    int corrected_height = abs(height);
+    int absoloute_height = abs(height);
 
-    pixel **image = malloc(corrected_height * sizeof(pixel*));
+    pixel **image = malloc(absoloute_height * sizeof(pixel*));
 
     if(image == NULL)
     {
@@ -277,6 +277,7 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
             tempColumns[column].red = pallete->pixels[currentByte].red;
             tempColumns[column].green = pallete->pixels[currentByte].green;
             tempColumns[column].blue = pallete->pixels[currentByte].blue;
+            tempColumns[column].alpha = 0;
             loadedByteIndex ++ ;
             
         }
@@ -518,9 +519,14 @@ void create_image_file(bitmapfile bitmap, char *filename)
     fwrite(&bitmap.ColorsUsed, 4, 1, imageFile);
     fwrite(&bitmap.ImportantColors, 4, 1, imageFile);
 
-    for (int i = 0; i < abs(bitmap.Height); i++){
+    for (int i = 0; i < absHeight; i++){
+        // printf("I: %i \n", i);
         for(int k = 0; k < bitmap.Width; k++){
-            fwrite(&bitmap.ImagePixels[i][k], sizeof(bitmap.ImagePixels[i][k]), 1, imageFile);
+            //printf("r: %i  g: %i  b: %i \n",bitmap.ImagePixels[i][k].red, bitmap.ImagePixels[i][k].green, bitmap.ImagePixels[i][k].blue );
+            fwrite(&bitmap.ImagePixels[i][k].blue, sizeof(BYTE), 1, imageFile);
+            fwrite(&bitmap.ImagePixels[i][k].green, sizeof(BYTE), 1, imageFile);
+            fwrite(&bitmap.ImagePixels[i][k].red, sizeof(BYTE), 1, imageFile);
+            fwrite(&bitmap.ImagePixels[i][k].alpha, sizeof(BYTE), 1, imageFile);
         }
 
         if (padding > 0){
@@ -574,5 +580,15 @@ DWORD revaluate_height(signedDWORD height)
     }
 
     return height;
+
+}
+
+void free_Image_Pixels(pixel ** imagePixels, signedDWORD height)
+{
+    for(int i = 0; i < abs(height); i++)
+    {
+        free(imagePixels[i]);
+    }
+    free(imagePixels);
 
 }
