@@ -105,7 +105,9 @@ int main(int argc, char *argv[])
 
 
     //grayscaleFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
-    boxBlurFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width, 3);
+    // boxBlurFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width, 3);
+    sobelEdgeDetection(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
+    
 
     
 
@@ -113,6 +115,7 @@ int main(int argc, char *argv[])
     //create_image_file(imageData, "test.bmp");
     create_image_file(imageData, "test.bmp");
 
+    
 // Free everything
 
     if(Colors.count > 18)

@@ -27,6 +27,7 @@ enum hexSizesinbytes{
 };
 
 typedef uint8_t BYTE;
+typedef int8_t signedByte;
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
 typedef int32_t signedDWORD;

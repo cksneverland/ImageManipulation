@@ -113,3 +113,113 @@ void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, 
 }
 
 
+void sobelEdgeDetection(pixel** regularImage, signedDWORD height, signedDWORD width)
+{
+    signedByte GXR[3][3] = {{-1,0,1},{-2,0,2},{-1,0,1}};
+    signedByte GYR[3][3] = {{1,2,1},{0,0,0},{-1,-2,-1}};
+
+    pixel **edgeImage = malloc(sizeof(pixel *) * abs(height));
+    for(int i =0; i < abs(height); i++)
+    {
+        pixel *tempColumns = malloc(sizeof(pixel) * width);
+        edgeImage[i] = tempColumns;
+        if (tempColumns == NULL)
+        {
+            printf("Error allocating bytes \n");
+            free(tempColumns);
+            for(int j = 0; j < i;j++)
+            {
+                free(edgeImage[j]);
+            }
+            return ;
+        }
+        
+    }
+
+    BYTE steps = 1; //1 becasue from the center of a 3x3 a "step" is the upper left corner one left and up 
+
+    for(int mainRow = 0; mainRow < abs(height); mainRow++)
+    {
+        int startRow = mainRow - steps;
+        for(int mainColumn = 0; mainColumn < width; mainColumn++)
+        {
+            int startColumn = mainColumn - steps;
+
+            int GXRred = 0;
+            int GXRgreen = 0;
+            int GXRblue = 0;
+            int GYRred = 0;
+            int GYRgreen = 0;
+            int GYRblue = 0;
+
+
+            int GRow = 0;
+            int GColumn = 0;
+            for(int sectionRow = startRow; sectionRow < (startRow + 3); sectionRow++)
+            {
+                for(int sectionColumn = startColumn; sectionColumn < (startColumn + 3); sectionColumn++)
+                {
+                    if(sectionRow  >= 0 && sectionRow < abs(height))
+                    {
+                        if(sectionColumn >= 0 && sectionColumn < width)
+                        {
+                            GXRred   += regularImage[sectionRow][sectionColumn].red    * GXR[GRow][GColumn];
+                            GXRgreen += regularImage[sectionRow][sectionColumn].green  * GXR[GRow][GColumn];
+                            GXRblue  += regularImage[sectionRow][sectionColumn].blue   * GXR[GRow][GColumn];
+
+                            GYRred   += regularImage[sectionRow][sectionColumn].red    * GYR[GRow][GColumn];
+                            GYRgreen += regularImage[sectionRow][sectionColumn].green  * GYR[GRow][GColumn];
+                            GYRblue  += regularImage[sectionRow][sectionColumn].blue   * GYR[GRow][GColumn];
+                        }
+                        
+                    }
+                    
+
+                    GColumn ++;
+
+                }
+                GRow ++;
+                GColumn = 0;
+            }
+            
+            // Appproxamation first rn
+            int Gred   = round(sqrt((GXRred * GXRred) + (GYRred * GYRred)));
+            int Ggreen = round(sqrt((GXRgreen * GXRgreen) + (GYRgreen * GYRgreen)));
+            int Gblue  = round(sqrt((GXRblue * GXRblue) + (GYRblue * GYRblue)));
+
+            if(Gred > 255)
+                edgeImage[mainRow][mainColumn].red = 255;
+            else 
+                edgeImage[mainRow][mainColumn].red = (BYTE)Gred;
+
+            if(Ggreen > 255)
+                edgeImage[mainRow][mainColumn].green = 255;
+            else 
+                edgeImage[mainRow][mainColumn].green = (BYTE)Ggreen;
+
+            if(Gblue > 255)
+                edgeImage[mainRow][mainColumn].blue = 255;
+            else 
+                edgeImage[mainRow][mainColumn].blue = (BYTE)Gblue;
+
+
+
+        }
+    }
+
+    
+    for(int row = 0; row < abs(height); row++)
+    {
+        for(int column = 0; column < width; column++)
+        {
+            regularImage[row][column].red = edgeImage[row][column].red;
+            regularImage[row][column].green = edgeImage[row][column].green;
+            regularImage[row][column].blue = edgeImage[row][column].blue;
+            regularImage[row][column].alpha = 0;
+        }
+    }
+    
+    free_Image_Pixels(edgeImage, abs(height));
+
+}
+
