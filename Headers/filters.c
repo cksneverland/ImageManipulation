@@ -23,6 +23,23 @@ void grayscaleFilter(pixel** regularImage, signedDWORD height, signedDWORD width
 
 }
 
+void invertedColorFilter(pixel** regularImage, signedDWORD height, signedDWORD width){
+
+    BYTE pixelaverage = 0;
+    for(int i = 0; i < height; i++)
+    {
+        for(int coloumn = 0; coloumn < width; coloumn++)
+        {
+
+            regularImage[i][coloumn].blue  = 255 - regularImage[i][coloumn].blue;
+            regularImage[i][coloumn].green = 255 - regularImage[i][coloumn].green;
+            regularImage[i][coloumn].red   = 255 - regularImage[i][coloumn].red;
+        }
+    }
+
+
+}
+
 void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, WORD blurScale)
 {
     if(blurScale < 2)

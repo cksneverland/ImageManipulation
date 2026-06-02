@@ -8,15 +8,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+enum argtypes{
+    argError,
+    Sobel,
+    greyscale,
+    invert,
+    boxblur
+};
 typedef struct
 {
     bool sucsess;
-    bool dubug;
+    bool debug;
+    bool grayscale;
+    bool boxblur;
+    bool sobeledge;
+    bool invert;
     char *inputfile;
     char *outputfile;
 }args;
 args argParser(char *argv[], int argc);
+int checkOptinalArgs(char* arg);
 
 // Function
 
@@ -103,16 +114,19 @@ int main(int argc, char *argv[])
     printf("Image last pixel| R: %i G: %i B: %i  A:%i \n", imageData.ImagePixels[abs(finheight)][finwidth].red, imageData.ImagePixels[abs(finheight)][finwidth].green, imageData.ImagePixels[abs(finheight)][finwidth].blue, imageData.ImagePixels[abs(finheight)][finwidth].alpha);
     printf("R: %i B: %i G: %i \n", Colors.pixels[0xc3].red, Colors.pixels[0xc3].green, Colors.pixels[0xc3].blue);
 
-
-    //grayscaleFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
-    // boxBlurFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width, 3);
-    sobelEdgeDetection(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
+    if(parsedargs.grayscale == true)
+        grayscaleFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
+    if(parsedargs.invert == true)
+        invertedColorFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
+    if(parsedargs.boxblur == true)
+        boxBlurFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width, 3);
+    if(parsedargs.sobeledge == true)
+        sobelEdgeDetection(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
     
 
     
 
 
-    //create_image_file(imageData, "test.bmp");
     create_image_file(imageData, "test.bmp");
 
     
@@ -153,6 +167,7 @@ args argParser(char *argv[], int argc)
                     case 'd':
                         printf("Debugging \n");
                         break;
+                    // Output
                     case 'o':
                         if(i+1 < argc && foundoutput == false)
                         {
@@ -172,7 +187,7 @@ args argParser(char *argv[], int argc)
                         return arguments;
 
                         break;
-
+                    // Input
                     case 'i':
                         if(i+1 < argc && foundinput == false)
                         {
@@ -198,8 +213,34 @@ args argParser(char *argv[], int argc)
                         break;
                 } 
             }
+            
+            else
+            {
+                switch (checkOptinalArgs(argv[i]))
+                            {
+                            case argError:
+                                arguments.sucsess = false;
+                                return arguments;
+                                break;
+                            case Sobel:
+                                arguments.sobeledge = true;
+                                break;
+                            case greyscale:
+                                arguments.grayscale = true;
+                                break;
+                            case invert:
+                                arguments.invert = true;
+                                break;
+                            case boxblur:
+                                arguments.boxblur = true;
+                                break;
+                            }
+            }
+            // BoxBlur, SobelEdge, Grayscale, Inverted
+           
         
         }
+        // Out find a input or output 
         else if(i > 0 && foundinput == false || i > 0 && foundoutput == false)
         {
             if(foundinput == false)
@@ -224,4 +265,22 @@ args argParser(char *argv[], int argc)
     arguments.sucsess = true;
     return arguments;
 
+}
+
+// optomise later w/ a single loop if i get more  args
+int checkOptinalArgs(char* arg)
+{
+    if(strcmp(arg, "-sobel") == 0)
+        return Sobel;
+    
+    if(!strcmp(arg, "-greyscale"))
+        return greyscale;
+    
+    if(!strcmp(arg, "-invert"))
+        return invert;
+    
+    if(!strcmp(arg, "-boxblur"))
+        return boxblur;
+    
+    return argError;
 }
