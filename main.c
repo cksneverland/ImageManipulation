@@ -26,6 +26,7 @@ typedef struct
     char *inputfile;
     char *outputfile;
 }args;
+void outputHelp(void);
 args argParser(char *argv[], int argc);
 int checkOptinalArgs(char* arg);
 
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
     if (argc < 2)
     {
         printf("Invalid arguments\n Usage: ./imagedetec input output \n");
-        printf("Flags:\n   -o: Output\n   -i: Input\n   -d; Debug\n");
+        outputHelp();
         return 1;
     }
 
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
     if (parsedargs.sucsess == false)
     {
         printf("Invalid arguments\n Usage: ./imagedetec input output \n");
-        printf("Flags:\n   -o: Output\n   -i: Input\n   -d; Debug\n");
+        outputHelp();
         return 2;
     }
 
@@ -116,10 +117,13 @@ int main(int argc, char *argv[])
 
     if(parsedargs.grayscale == true)
         grayscaleFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
+
     if(parsedargs.invert == true)
         invertedColorFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
+
     if(parsedargs.boxblur == true)
         boxBlurFilter(imageData.ImagePixels, abs(imageData.Height), imageData.Width, 3);
+
     if(parsedargs.sobeledge == true)
         sobelEdgeDetection(imageData.ImagePixels, abs(imageData.Height), imageData.Width);
     
@@ -145,13 +149,23 @@ int main(int argc, char *argv[])
 
 }
 
-
+void outputHelp(void)
+{
+    printf("Flags:\n   -o: Output\n   -i: Input\n   -d: Debug\n   -sobel: Uses sobel edge detection\n   -greyscale: It's gray   \n   -cInvert: Inverts the color\n   -boxBlur: Blurs the image using box blur algoritim\n");
+}
 
 args argParser(char *argv[], int argc) 
 {
     bool foundinput = false;
     bool foundoutput = false;
     args arguments;
+
+    arguments.boxblur = false;
+    arguments.debug = false;
+    arguments.grayscale = false;
+    arguments.invert = false;
+    arguments.outputfile = NULL;
+    arguments.sobeledge = false;
 
     for (int i = 0; i < argc; i++)
     {
@@ -209,7 +223,9 @@ args argParser(char *argv[], int argc)
                         break;
                     
                     default:
-                        printf("Others \n");
+                        printf("Error with argument %s%s%s example.\n", "\033[4m", argv[i], "\033[0m"); // Just for underlining im crine
+                        arguments.sucsess = false;
+                        return arguments;
                         break;
                 } 
             }
@@ -276,11 +292,12 @@ int checkOptinalArgs(char* arg)
     if(!strcmp(arg, "-greyscale"))
         return greyscale;
     
-    if(!strcmp(arg, "-invert"))
+    if(!strcmp(arg, "-cInvert"))
         return invert;
     
     if(!strcmp(arg, "-boxblur"))
         return boxblur;
     
+    printf("Error with argument %s%s%s example.\n", "\033[4m", arg, "\033[0m"); // Just for underlining im crine
     return argError;
 }
