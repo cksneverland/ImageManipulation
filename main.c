@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 
 void outputHelp(void)
 {
-    printf("Flags:\n   -o: Output\n   -i: Input\n   -d: Debug\n   -sobel: Uses sobel edge detection\n   -greyscale: It's gray   \n   -cInvert: Inverts the color\n   -boxBlur: Blurs the image using box blur algoritim\n");
+    printf("Arguments:\n   -o: Output\n   -i: Input\n   -d: Debug\n   -sobel: Uses sobel edge detection\n   -greyscale: It's gray   \n   -cInvert: Inverts the color\n   -boxBlur: Blurs the image using box blur algoritim\n");
 }
 
 args argParser(char *argv[], int argc) 
