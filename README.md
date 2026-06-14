@@ -13,7 +13,7 @@
 |-greyscale| It's gray|
 |-cInvert|Inverts the color|
 |-boxBlur| Blurs the image using box blur algoritim
-
+|errorDifusinDithering| floyd, simple2D,jarvisJudiceNinke, atkinson Not fully implemented
 
 
 
