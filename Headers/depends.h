@@ -29,11 +29,12 @@ enum hexSizesinbytes{
 typedef uint8_t BYTE;
 typedef int8_t signedByte;
 typedef uint16_t WORD;
+typedef int16_t signedWORD;
 typedef uint32_t DWORD;
 typedef int32_t signedDWORD;
 typedef uint64_t QWORD;
 
-typedef struct 
+typedef struct
 {
     BYTE red;
     BYTE green;
@@ -53,5 +54,6 @@ typedef struct LoadedFiles
 loadedfile loadFile(char *fileName);
 QWORD combine2HexVals(DWORD higherPlaceVal, DWORD lowerPlaceVal, BYTE lowerPlaceValSizeBytes);
 QWORD combineMultipleBytes(BYTE *bytes, BYTE amountofBytes, BYTE mode); //Combines up to 8 bytes
+BYTE pixelClamp(int pixelVal);
 
 #endif

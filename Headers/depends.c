@@ -95,3 +95,16 @@ QWORD combineMultipleBytes(BYTE *bytes, BYTE amountofBytes, BYTE mode) //Combine
 
 }
 
+BYTE pixelClamp(int pixelVal)
+{
+    if(pixelVal > 255)
+    {
+        return 255;
+    }
+    else if (pixelVal < 0)
+    {
+        return 0;
+    }
+
+    return pixelVal;
+}
