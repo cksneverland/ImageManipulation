@@ -6,8 +6,8 @@
 
 typedef struct
 {
-    int r,g,b;
-}errorDiffusion;
+    int r,g,b,a;
+}filterBuffer;
     
 
 typedef struct
@@ -24,26 +24,33 @@ typedef struct
     BYTE divisor;
 }diffusionPattern;
 
-enum DiffusionPatterns{
-        floyd,
-        simple2D,
-        jarvisJudiceNinke,
-        atkinson
-    };
+typedef enum{
+        diffusionPatternFloyd,
+        diffusionPatternSimple2D,
+        diffusionPatternJarvisJudiceNinke,
+        diffusionPatternAtkinson,
+        diffusionPatternStucki,
+        diffusionPatternSierra,
+        diffusionPatternError
+    }diffusionPatterns;
 
 typedef enum SCANTYPE
 {
     scanBothWays= 0,
     scanRight = 1,
     scanLeft = -1,
+    scanErr = 2,
 }scanType;
 
     
 
 void grayscaleFilter(pixel** regularImage, signedDWORD height, signedDWORD width);
 void invertedColorFilter(pixel** regularImage, signedDWORD height, signedDWORD width);
-void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, WORD blurScale);
-void sobelEdgeDetection(pixel** regularImage, signedDWORD height, signedDWORD width);
-void errorDiffusionDithering(pixel** regularimage ,signedDWORD height, signedDWORD width, int diffusionType, scanType scanSetting);
+void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, WORD blurScale, filterBuffer **bluredImage);
+void sobelEdgeDetection(pixel** regularImage, signedDWORD height, signedDWORD width, filterBuffer ** edgeImage);
+void errorDiffusionDithering(pixel** regularimage ,signedDWORD height, signedDWORD width, int diffusionType, scanType scanSetting, BYTE channelLevel, filterBuffer **buffer);
+filterBuffer **createFilterBuffer(signedDWORD height, signedDWORD width);
+void clearFilterBuffer(filterBuffer **buffer, signedDWORD height, signedDWORD width);
+void freeFilterBuffer(filterBuffer ** buffer);
 
 #endif

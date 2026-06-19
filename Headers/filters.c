@@ -7,60 +7,37 @@
 #include <string.h>
 
 
+filterBuffer **createFilterBuffer(signedDWORD height, signedDWORD width)
+{
+    filterBuffer **imageBuffer = malloc(sizeof(filterBuffer*) * abs(height));
+    filterBuffer *imageBufferRows = malloc(sizeof(filterBuffer) * abs(height) * width);
 
-diffusionParams floydSteinberParams[] = {
-    {0, 1, 7},
-    {1,-1, 3},
-    {1, 0, 5},
-    {1, 1, 1}
-};
-const BYTE numFloydSteinbergParams = 4;
-const BYTE floydSteinbergDivisor =16;
-    
+    if(!imageBuffer || !imageBufferRows)
+    {
+        free(imageBuffer);
+        free(imageBufferRows);
+        return NULL;
+    }
 
-diffusionParams simple2DParams[] = {
-    {0, 1, 1},
-    {1, 0, 1}
-};
-const BYTE numSimple2DParams = 2;
-const BYTE simple2DDiviosr = 2;
-    
+    for(int i = 0; i< abs(height); i++)
+    {
+        imageBuffer[i] = &imageBufferRows[i* width];
+    }
+    clearFilterBuffer(imageBuffer, height, width);
+    return imageBuffer;
+}
 
-diffusionParams jarvisJudiceNinkeParams[] = {
-    {0, 1, 7},
-    {0, 2, 5},
-    {1,-2, 3},
-    {1,-1, 5},
-    {1, 0, 7},
-    {1, 1, 5},
-    {1, 2, 3},
-    {1,-2, 1},
-    {1,-1, 3},
-    {1, 0, 5},
-    {1, 1, 3},
-    {1, 2, 1}
-};
-const BYTE numJarvisJudiceNinkeParams = 12;
-const BYTE jarvisJudiceNinkeDivisor = 48;
+void clearFilterBuffer(filterBuffer **buffer, signedDWORD height, signedDWORD width)
+{
+    memset(&buffer[0][0], 0, sizeof(filterBuffer) * height * width);
+}
 
-diffusionParams atkinsonParams[] = {
-    {0, 1, 1},
-    {0, 2, 1},
-    {1,-1, 1},
-    {1, 0, 1},
-    {1, 2, 1},
-    {2, 0, 1},
-};
-const BYTE numAtkinsonParams = 12;
-const BYTE atkinsonDivisor = 8;
+void freeFilterBuffer(filterBuffer ** buffer)
+{
+    free(&buffer[0][0]);
+    free(buffer);
 
-
-diffusionPattern floydSteinbergPattern ={floydSteinberParams, numFloydSteinbergParams, floydSteinbergDivisor};
-diffusionPattern simple2DPattern ={simple2DParams, numSimple2DParams, simple2DDiviosr};
-diffusionPattern jarvisJudiceNinkePattern ={jarvisJudiceNinkeParams, numJarvisJudiceNinkeParams, jarvisJudiceNinkeDivisor};
-diffusionPattern atkinsonPattern ={atkinsonParams, numAtkinsonParams, atkinsonDivisor};
-// Remember to add new patterns to the enum in the .h
-
+}
 
 void grayscaleFilter(pixel** regularImage, signedDWORD height, signedDWORD width){
 
@@ -97,30 +74,14 @@ void invertedColorFilter(pixel** regularImage, signedDWORD height, signedDWORD w
 
 }
 
-void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, WORD blurScale)
+void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, WORD blurScale, filterBuffer **bluredImage)
 {
+    clearFilterBuffer(bluredImage,height, width);
+
     if(blurScale < 2)
     {
         printf("Blur scale less than 2");
         return;
-    }
-
-    pixel **bluredImage = malloc(sizeof(pixel *) * abs(height));
-    for(int i =0; i < abs(height); i++)
-    {
-        pixel *tempColumns = malloc(sizeof(pixel) * width);
-        bluredImage[i] = tempColumns;
-        if (tempColumns == NULL)
-        {
-            printf("Error allocating bytes \n");
-            free(tempColumns);
-            for(int j = 0; j < i;j++)
-            {
-                free(bluredImage[j]);
-            }
-            return ;
-        }
-        
     }
 
     int steps = (int)blurScale/2;
@@ -131,6 +92,7 @@ void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, 
 
         for(int mainColumn = 0; mainColumn < width; mainColumn++)
         {
+
             int startColumn = mainColumn - steps;
             
            
@@ -143,6 +105,7 @@ void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, 
             // Getting neighbours
             for(int stepsRow = startRow; stepsRow <= (startRow + blurScale); stepsRow++)
             {
+
                 for(int stepsColumn = startColumn; stepsColumn <= (startColumn + blurScale); stepsColumn++)
                 {
                     if(stepsRow >= 0 && stepsRow < abs(height))
@@ -158,10 +121,10 @@ void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, 
                     
                 }
             }
-            bluredImage[mainRow][mainColumn].red = round(sumRed / foundPixels);
-            bluredImage[mainRow][mainColumn].green = round(sumGreen / foundPixels);
-            bluredImage[mainRow][mainColumn].blue = round(sumBlue / foundPixels);        
-            bluredImage[mainRow][mainColumn].alpha = 0;
+            bluredImage[mainRow][mainColumn].r = round(sumRed / foundPixels);
+            bluredImage[mainRow][mainColumn].g = round(sumGreen / foundPixels);
+            bluredImage[mainRow][mainColumn].b = round(sumBlue / foundPixels);        
+            bluredImage[mainRow][mainColumn].a = 0;
 
             foundPixels = 0;
         }
@@ -174,41 +137,24 @@ void boxBlurFilter(pixel** regularImage, signedDWORD height, signedDWORD width, 
     {
         for(int column = 0; column < width; column++)
         {
-            regularImage[row][column].red = bluredImage[row][column].red;
-            regularImage[row][column].green = bluredImage[row][column].green;
-            regularImage[row][column].blue = bluredImage[row][column].blue;
-            regularImage[row][column].alpha = bluredImage[row][column].alpha;
+            regularImage[row][column].red = bluredImage[row][column].r;
+            regularImage[row][column].green = bluredImage[row][column].g;
+            regularImage[row][column].blue = bluredImage[row][column].b;
+            regularImage[row][column].alpha = bluredImage[row][column].a;
         }
     }
-    
-    free_Image_Pixels(bluredImage, abs(height));
     
 
 }
 
 
-void sobelEdgeDetection(pixel** regularImage, signedDWORD height, signedDWORD width)
+void sobelEdgeDetection(pixel** regularImage, signedDWORD height, signedDWORD width, filterBuffer ** edgeImage)
 {
+    clearFilterBuffer(edgeImage,height, width);
     signedByte GXR[3][3] = {{-1,0,1},{-2,0,2},{-1,0,1}};
     signedByte GYR[3][3] = {{1,2,1},{0,0,0},{-1,-2,-1}};
 
-    pixel **edgeImage = malloc(sizeof(pixel *) * abs(height));
-    for(int i =0; i < abs(height); i++)
-    {
-        pixel *tempColumns = malloc(sizeof(pixel) * width);
-        edgeImage[i] = tempColumns;
-        if (tempColumns == NULL)
-        {
-            printf("Error allocating bytes \n");
-            free(tempColumns);
-            for(int j = 0; j < i;j++)
-            {
-                free(edgeImage[j]);
-            }
-            return ;
-        }
-        
-    }
+    
 
     BYTE steps = 1; //1 becasue from the center of a 3x3 a "step" is the upper left corner one left and up 
 
@@ -262,19 +208,19 @@ void sobelEdgeDetection(pixel** regularImage, signedDWORD height, signedDWORD wi
             int Gblue  = round(sqrt((GXRblue * GXRblue) + (GYRblue * GYRblue)));
 
             if(Gred > 255)
-                edgeImage[mainRow][mainColumn].red = 255;
+                edgeImage[mainRow][mainColumn].r = 255;
             else 
-                edgeImage[mainRow][mainColumn].red = (BYTE)Gred;
+                edgeImage[mainRow][mainColumn].r = (BYTE)Gred;
 
             if(Ggreen > 255)
-                edgeImage[mainRow][mainColumn].green = 255;
+                edgeImage[mainRow][mainColumn].g = 255;
             else 
-                edgeImage[mainRow][mainColumn].green = (BYTE)Ggreen;
+                edgeImage[mainRow][mainColumn].g = (BYTE)Ggreen;
 
             if(Gblue > 255)
-                edgeImage[mainRow][mainColumn].blue = 255;
+                edgeImage[mainRow][mainColumn].b = 255;
             else 
-                edgeImage[mainRow][mainColumn].blue = (BYTE)Gblue;
+                edgeImage[mainRow][mainColumn].b = (BYTE)Gblue;
 
 
 
@@ -286,20 +232,105 @@ void sobelEdgeDetection(pixel** regularImage, signedDWORD height, signedDWORD wi
     {
         for(int column = 0; column < width; column++)
         {
-            regularImage[row][column].red = edgeImage[row][column].red;
-            regularImage[row][column].green = edgeImage[row][column].green;
-            regularImage[row][column].blue = edgeImage[row][column].blue;
+            regularImage[row][column].red = edgeImage[row][column].r;
+            regularImage[row][column].green = edgeImage[row][column].g;
+            regularImage[row][column].blue = edgeImage[row][column].b;
             regularImage[row][column].alpha = 0;
         }
     }
-    
-    free_Image_Pixels(edgeImage, abs(height));
 
 }
 
-void errorDiffusionDithering(pixel** regularimage ,signedDWORD height, signedDWORD width, int diffusionType, scanType scanSetting)
+void errorDiffusionDithering(pixel** regularimage ,signedDWORD height, signedDWORD width, int diffusionType, scanType scanSetting, BYTE channelLevel, filterBuffer **buffer)
 {
-    diffusionPattern allDiffusionPaterns[] = {floydSteinbergPattern, simple2DPattern, jarvisJudiceNinkePattern, atkinsonPattern};
+        
+    diffusionParams floydSteinberParams[] = {
+        {0, 1, 7},
+        {1,-1, 3},
+        {1, 0, 5},
+        {1, 1, 1}
+    };
+    const BYTE numFloydSteinbergParams = 4;
+    const BYTE floydSteinbergDivisor =16;
+        
+
+    diffusionParams simple2DParams[] = {
+        {0, 1, 1},
+        {1, 0, 1}
+    };
+    const BYTE numSimple2DParams = 2;
+    const BYTE simple2DDiviosr = 2;
+        
+
+    diffusionParams jarvisJudiceNinkeParams[] = {
+        {0, 1, 7},
+        {0, 2, 5},
+        {1,-2, 3},
+        {1,-1, 5},
+        {1, 0, 7},
+        {1, 1, 5},
+        {1, 2, 3},
+        {2,-2, 1},
+        {2,-1, 3},
+        {2, 0, 5},
+        {2, 1, 3},
+        {2, 2, 1}
+    };
+    const BYTE numJarvisJudiceNinkeParams = 12;
+    const BYTE jarvisJudiceNinkeDivisor = 48;
+
+    diffusionParams atkinsonParams[] = {
+        {0, 1, 1},
+        {0, 2, 1},
+        {1,-1, 1},
+        {1, 0, 1},
+        {1, 2, 1},
+        {2, 0, 1},
+    };
+    const BYTE numAtkinsonParams = 6;
+    const BYTE atkinsonDivisor = 8;
+
+    diffusionParams stuckiParams[] = {
+        {0, 1, 8},
+        {0, 2, 4},
+        {1,-2, 2},
+        {1,-1, 4},
+        {1, 0, 8},
+        {1, 1, 4},
+        {1, 2, 2},
+        {2,-2, 1},
+        {2,-1, 2},
+        {2, 0, 4},
+        {2, 1, 2},
+        {2, 2, 1}
+    };
+    const BYTE numStuckiParams = 12;
+    const BYTE stuckiDivisor = 42;
+
+    diffusionParams sierraParams[] = {
+        {0, 1, 5},
+        {0, 2, 3},
+        {1,-2, 2},
+        {1,-1, 4},
+        {1, 0, 5},
+        {1, 1, 4},
+        {1, 2, 2},
+        {2,-1, 2},
+        {2, 0, 3},
+        {2, 1, 2}
+    };
+    const BYTE numSierraParams = 10;
+    const BYTE sierraDivisor = 32;
+
+    const diffusionPattern floydSteinbergPattern ={floydSteinberParams, numFloydSteinbergParams, floydSteinbergDivisor};
+    const diffusionPattern simple2DPattern ={simple2DParams, numSimple2DParams, simple2DDiviosr};
+    const diffusionPattern jarvisJudiceNinkePattern ={jarvisJudiceNinkeParams, numJarvisJudiceNinkeParams, jarvisJudiceNinkeDivisor};
+    const diffusionPattern atkinsonPattern ={atkinsonParams, numAtkinsonParams, atkinsonDivisor};
+    const diffusionPattern stuckiPattern ={stuckiParams, numStuckiParams, stuckiDivisor};
+    const diffusionPattern sierraPattern ={sierraParams, numSierraParams, sierraDivisor};
+
+    diffusionPattern allDiffusionPaterns[] = {floydSteinbergPattern, simple2DPattern, jarvisJudiceNinkePattern, atkinsonPattern,
+                                              stuckiPattern, sierraPattern};
     diffusionPattern *chosenPattern = &allDiffusionPaterns[diffusionType];
     diffusionParams *chosenParams = chosenPattern->params;
     int divisor = chosenPattern->divisor;
@@ -307,27 +338,8 @@ void errorDiffusionDithering(pixel** regularimage ,signedDWORD height, signedDWO
 
     
     height = abs(height);
-    errorDiffusion **buffer = NULL;
-    errorDiffusion *bufferRows = NULL;
+    clearFilterBuffer(buffer,height, width);
 
-    bufferRows = malloc(sizeof(errorDiffusion) * width * height);
-    buffer = malloc(sizeof(errorDiffusion*) * height);
-    
-    if(!bufferRows || !buffer)
-    {
-        free(buffer);
-        free(bufferRows);
-        printf("Buffer Rows or Buffer had an error \n");
-        return; // really should do sum idk
-    }
-    memset(bufferRows, 0, sizeof(errorDiffusion) * width * height);
-    for(int i =0; i < height; i++)
-    {
-        buffer[i] = &bufferRows[i * width];
-    }
-
-
-    BYTE channelLevel = 3;
     float step = 255 / (float)(channelLevel- 1);
 
     BYTE quantizeLookup[256];
@@ -346,7 +358,7 @@ void errorDiffusionDithering(pixel** regularimage ,signedDWORD height, signedDWO
     for(int row = 0; row < height; row++)
     {
         pixel *currentImageRow = regularimage[row];
-        errorDiffusion *currentBufferRow = buffer[row];
+        filterBuffer *currentBufferRow = buffer[row];
         
         if(scanSetting == scanBothWays)
         {
@@ -400,7 +412,4 @@ void errorDiffusionDithering(pixel** regularimage ,signedDWORD height, signedDWO
 
         }
     }
-
-    free(buffer);
-    free(bufferRows);
 }

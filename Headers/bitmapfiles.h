@@ -2,7 +2,7 @@
 
 #define BitmapLib
 #include "depends.h"
-
+#include "filters.h"
 // masks to isolate the pallete number
 enum TwoBitByteMasksPixelOrder{
     numOf4BitPixelMasks    = 2,
@@ -73,6 +73,8 @@ enum bitmaskFor16BitPixelsShift{
 
 typedef struct
 {
+    pixel **ImagePixels;
+    filterBuffer **imageFilterBuffer;
     DWORD ImageStartOffset;
     DWORD FileSize;
     DWORD Reserved;
@@ -88,7 +90,8 @@ typedef struct
     DWORD ImportantColors;
     WORD BitsPerPixel;
     BYTE paddingSize;
-    pixel **ImagePixels;
+    bool debugmode;
+
 }bitmapfile;
 
 typedef struct 
@@ -115,6 +118,6 @@ BYTE get_Polarity(signedDWORD height);
 DWORD revaluate_height(signedDWORD height);
 void create_image_file(bitmapfile bitmap, char *filename);
 bitmapfile get_Bitmapfile_Data(loadedfile file);
-void free_Image_Pixels(pixel ** imagePixels, signedDWORD height);
+void free_Image_Pixels(pixel ** imagePixels);
 
 #endif

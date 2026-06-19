@@ -3,6 +3,7 @@
 #include "bitmapfiles.h"
 #include<stdio.h>
 #include<stdlib.h>
+#include <string.h>
 
 const BYTE FourBitMaskArray[2] = {fourBitFirstPixelMask, fourBitSecondPixelMask};
 
@@ -98,11 +99,21 @@ pixel** form_Image(BYTE *loadedBytes, DWORD startingOffset, WORD bitsPerPixel, s
     int absoloute_height = abs(height);
 
     pixel **image = malloc(absoloute_height * sizeof(pixel*));
+    pixel *imageRows = malloc(width * absoloute_height * sizeof(pixel));
 
-    if(image == NULL)
+    if(image == NULL || imageRows == NULL)
     {
+        free(image);
+        free(imageRows);
         return NULL;
     }
+
+    memset(imageRows, 0, sizeof(pixel) * width * absoloute_height);
+    for(int i = 0; i < absoloute_height; i++)
+    {
+        image[i] = &imageRows[i * width];
+    }
+
 
     if(bitsPerPixel % 2 != 0 && bitsPerPixel != 1)
     {
@@ -152,8 +163,6 @@ pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
     // check if image stored upsidedown
     BYTE polarity = get_Polarity(height);
 
-    printf("Polarity: %i \n", polarity);
-
     if((height = revaluate_height(height)) == 0)
     {
         return NULL;
@@ -167,23 +176,16 @@ pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
     BYTE BitMaksModeDefault = 1; // Upper part of the byte
     BYTE bitMaskMode = BitMaksModeDefault;
 
+    int start = (polarity == 0) ? 0 : width - 1;
+    int end   = (polarity == 0) ? width : -1;
+    int direction = (polarity == 0) ? 1: -1;
+
     // Making the Image part
     for(int row = 0; row < height; row += 1)
     {   
-        pixel *tempColumns = malloc(sizeof(pixel) * width);
-        if (tempColumns == NULL)
-        {
-            printf("Error allocating bytes \n");
-            free(tempColumns);
-            for(int i = 0; i < row;i++)
-            {
-                free(image[row]);
-            }
-            free(image);
-            return NULL;
-        }
+        pixel *tempColumns = image[row];
         
-        for(int column = 0; column < width; column++)
+        for(int column = start; column != end; column += direction)
         {
             BYTE currentByte = loadedBytes[loadedByteIndex];
                 for(int j = 0; j < byteSizeInBits / halfByteSizeInBits; j++)
@@ -198,7 +200,7 @@ pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
                         tempColumns[column].green = pallete->pixels[palleteIndex].green;
                         tempColumns[column].blue = pallete->pixels[palleteIndex].blue;
                     }
-                    else if(column + 1 < width)
+                    else if(column + direction != end)
                     {
                         column++;
                         palleteIndex = get_Pallete_Index(currentByte,FourBitMaskArray[j], halfByteSizeInBits, bitMaskMode);
@@ -221,14 +223,7 @@ pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
         }
         
 
-        if(polarity == 0)
-        {
-            image[row] = tempColumns;
-        }
-        else
-        {
-            image[(height - 1) - row] = tempColumns;
-        }
+        
 
         loadedByteIndex += paddedBytes;
 
@@ -242,9 +237,6 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
     // check if image stored upsidedown
     BYTE polarity = get_Polarity(height);
 
-
-    printf("Polarity: %i \n", polarity);
-
     if((height = revaluate_height(height)) == 0)
     {
         return NULL;
@@ -253,24 +245,16 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
     BYTE paddedBytes = calculatePaddedBytes(abs(width), byteSizeInBits);
 
     DWORD loadedByteIndex = 0;
+    int start = (polarity == 0) ? 0 : width - 1;
+    int end   = (polarity == 0) ? width : -1;
+    int direction = (polarity == 0) ? 1: -1;
 
     // Making the Image part
     for(int row = 0; row < height; row += 1)
     {   
-        pixel *tempColumns = malloc(sizeof(pixel) * width);
-        if (tempColumns == NULL)
-        {
-            printf("Error allocating bytes \n");
-            free(tempColumns);
-            for(int i = 0; i < row;i++)
-            {
-                free(image[row]);
-            }
-            free(image);
-            return NULL;
-        }
+        pixel *tempColumns = image[row];
         
-        for(int column = 0; column < width; column++)
+        for(int column = start; column != end; column+= direction)
         {
             BYTE currentByte = loadedBytes[loadedByteIndex];
 
@@ -282,16 +266,6 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
             
         }
         
-
-        if(polarity == 0)
-        {
-            image[row] = tempColumns;
-        }
-        else
-        {
-            image[(height - 1) - row] = tempColumns;
-        }
-
         loadedByteIndex += paddedBytes;
 
     }
@@ -303,7 +277,6 @@ pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 {
     // check if image stored upsidedown
     BYTE polarity = get_Polarity(height);
-    printf("Polarity: %i \n", polarity);
 
     if((height = revaluate_height(height)) == 0)
     {
@@ -311,24 +284,16 @@ pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
     }
 
     BYTE paddedBytes = calculatePaddedBytes(abs(width), wordSizeInBits);
+    int start = (polarity == 0) ? 0 : width - 1;
+    int end   = (polarity == 0) ? width : -1;
+    int direction = (polarity == 0) ? 1: -1;
 
     DWORD currentIndex = 0;
     // making the image part
     for(int row = 0; row < height; row++)
     {
-        pixel *tempColumns = malloc(sizeof(pixel) * width);
-        if (tempColumns == NULL)
-        {
-            printf("Error allocating bytes \n");
-            free(tempColumns);
-            for(int i = 0; i < row;i++)
-            {
-                free(image[row]);
-            }
-            free(image);
-            return NULL;
-        }
-        for(int column = 0; column < width; column++)
+        pixel *tempColumns = image[row];
+        for(int column = start; column != end; column+= direction)
         {
             // comine two seqential Bytes
             WORD rawPixel = combine2HexVals(loadedBytes[currentIndex + 1], loadedBytes[currentIndex], byteSizeInBytes); // Rember this is little endian so lowest place value is colected first lmao
@@ -341,15 +306,6 @@ pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
             currentIndex += 2;
 
         }
-
-         if(polarity == 0)
-        {
-            image[row] = tempColumns;
-        }
-        else
-        {
-            image[(height - 1) - row] = tempColumns;
-        }
         currentIndex += paddedBytes;
 
     }
@@ -361,8 +317,6 @@ pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 {
      BYTE polarity = get_Polarity(height);
 
-    printf("Polarity: %i \n", polarity);
-
     if((height = revaluate_height(height)) == 0)
     {
         return NULL;
@@ -370,24 +324,16 @@ pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 
     BYTE paddedBytes = calculatePaddedBytes(abs(width), 24); // 24 fro 24 bits lmao
 
+    int start = (polarity == 0) ? 0 : width - 1;
+    int end   = (polarity == 0) ? width : -1;
+    int direction = (polarity == 0) ? 1: -1;
 
     DWORD currentIndex = 0;
     // making the image part
     for(int row = 0; row < height; row++)
     {
-        pixel *tempColumns = malloc(sizeof(pixel) * width);
-        if (tempColumns == NULL)
-        {
-            printf("Error allocating bytes \n");
-            free(tempColumns);
-            for(int i = 0; i < row;i++)
-            {
-                free(image[row]);
-            }
-            free(image);
-            return NULL;
-        }
-        for(int column = 0; column < width; column++)
+        pixel *tempColumns = image[row];
+        for(int column = start; column != end; column+= direction)
         {
             // comine two seqential Bytes
 
@@ -402,16 +348,6 @@ pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
             currentIndex += 3;
 
         }
-
-
-        if(polarity == 0)
-        {
-            image[row] = tempColumns;
-        }
-        else
-        {
-            image[(height - 1) - row] = tempColumns;
-        }
         currentIndex += paddedBytes;
 
     }
@@ -421,9 +357,7 @@ pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 
 pixel** create_32Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD height, pixel **image)
 {
-     BYTE polarity = get_Polarity(height);
-
-    printf("Polarity: %i \n", polarity);
+    BYTE polarity = get_Polarity(height);
 
     if((height = revaluate_height(height)) == 0)
     {
@@ -432,49 +366,27 @@ pixel** create_32Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 
     BYTE paddedBytes = calculatePaddedBytes(abs(width), dwordSizeInBits); 
 
-
+    int start = (polarity == 0) ? 0 : width - 1;
+    int end   = (polarity == 0) ? width : -1;
+    int direction = (polarity == 0) ? 1: -1;
     DWORD currentIndex = 0;
     // making the image part
     for(int row = 0; row < height; row++)
     {
-        pixel *tempColumns = malloc(sizeof(pixel) * width);
-        if (tempColumns == NULL)
-        {
-            printf("Error allocating bytes \n");
-            free(tempColumns);
-            for(int i = 0; i < row;i++)
-            {
-                free(image[row]);
-            }
-            free(image);
-            return NULL;
-        }
+        pixel *tempColumns = image[row];
         for(int column = 0; column < width; column++)
         {
-            // comine two seqential Bytes
-
-            // "Zeros" the values after bitmask applied
             
             tempColumns[column].blue = loadedBytes[currentIndex];
             tempColumns[column].green = loadedBytes[currentIndex + 1];
             tempColumns[column].red =  loadedBytes[currentIndex + 2];
             tempColumns[column].alpha = loadedBytes[currentIndex + 3];
 
-            // printf("CurentRIndex: %i \n", currentIndex);
-            // printf("Debug: R: %x   G: %x,   B: %x \n",tempColumns[column].red, tempColumns[column].green, tempColumns[column].blue);
+            
             currentIndex += 4;
 
         }
 
-
-        if(polarity == 0)
-        {
-            image[row] = tempColumns;
-        }
-        else
-        {
-            image[(height - 1) - row] = tempColumns;
-        }
         currentIndex += paddedBytes;
 
     }
@@ -496,14 +408,14 @@ void create_image_file(bitmapfile bitmap, char *filename)
     bitmap.ImageStartOffset = 54; // size 54 but like we count from 0
     bitmap.BitsPerPixel = 32;
     BYTE padding = calculatePaddedBytes(bitmap.Width, dwordSizeInBits);
-    printf("Padding: %i \n", padding);
     int infoHeaderSize = 40;
     const BYTE zero = 0;
 
     signedDWORD absHeight = abs(bitmap.Height);
+    if(bitmap.debugmode == true)
+        printf("NewFileSize: %i\n", bitmap.FileSize);
 
     fwrite("BM", 2, 1, imageFile);
-    printf("NewFileSize: %i\n", bitmap.FileSize);
     fwrite(&bitmap.FileSize, 4, 1, imageFile);
     fwrite(&bitmap.Reserved, 4, 1, imageFile);
     fwrite(&bitmap.ImageStartOffset, 4, 1, imageFile);
@@ -519,22 +431,7 @@ void create_image_file(bitmapfile bitmap, char *filename)
     fwrite(&bitmap.ColorsUsed, 4, 1, imageFile);
     fwrite(&bitmap.ImportantColors, 4, 1, imageFile);
 
-    for (int i = 0; i < absHeight; i++){
-        // printf("I: %i \n", i);
-        for(int k = 0; k < bitmap.Width; k++){
-            //printf("r: %i  g: %i  b: %i \n",bitmap.ImagePixels[i][k].red, bitmap.ImagePixels[i][k].green, bitmap.ImagePixels[i][k].blue );
-            fwrite(&bitmap.ImagePixels[i][k].blue, sizeof(BYTE), 1, imageFile);
-            fwrite(&bitmap.ImagePixels[i][k].green, sizeof(BYTE), 1, imageFile);
-            fwrite(&bitmap.ImagePixels[i][k].red, sizeof(BYTE), 1, imageFile);
-            fwrite(&bitmap.ImagePixels[i][k].alpha, sizeof(BYTE), 1, imageFile);
-        }
-
-        if (padding > 0){
-            for(int j = 0; j < padding; j++){
-                fwrite(&zero, 1, 1, imageFile);
-            }
-        }
-    }
+    fwrite(&bitmap.ImagePixels[0][0], sizeof(pixel), bitmap.Width * absHeight, imageFile);
 
 
 
@@ -568,7 +465,6 @@ BYTE get_Polarity(signedDWORD height)
 DWORD revaluate_height(signedDWORD height)
 {
     BYTE polarity = get_Polarity(height);
-    printf("Polarity: %i \n",polarity);
 
     if(polarity != positive && polarity != negative)
     {
@@ -583,12 +479,9 @@ DWORD revaluate_height(signedDWORD height)
 
 }
 
-void free_Image_Pixels(pixel ** imagePixels, signedDWORD height)
+void free_Image_Pixels(pixel ** imagePixels)
 {
-    for(int i = 0; i < abs(height); i++)
-    {
-        free(imagePixels[i]);
-    }
+    free(&imagePixels[0][0]);
     free(imagePixels);
 
 }
