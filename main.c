@@ -14,7 +14,8 @@ typedef enum {
     greyscaleArg,
     invertArg,
     boxblurArg,
-    errorDiffusionArg
+    errorDitheringArg,
+    bayerDitheringArg
 }argtypes;
 
 // Union is basicly more than 1 struct in the same memory lwk glad i found it
@@ -35,6 +36,12 @@ typedef struct
             signedByte scan;
             BYTE level;
         } errorDither;
+
+        struct
+        {
+            BYTE scale;
+            BYTE level;
+        } bayerDither;
     } args;
 }argumentStorage;
 
@@ -53,6 +60,7 @@ args argParser(char *argv[], int argc);
 int checkFunctionArgs(char* arg);
 bool isanum(char *argv);
 char *toUpper(char *word);
+char *toLower(char *word);
 scanType getScanType(char *choice);
 diffusionPatterns getDitherType(char *choice);
 int getNumOfFunctionArgs(char *argv[], int argc);
@@ -160,7 +168,10 @@ int main(int argc, char *argv[])
     int finheight = abs(imageData.Height) - 1;
     int finwidth = imageData.Width - 1;
 
-   
+    scanType scan = 0;
+    BYTE level = 0;
+    BYTE scale = 0;
+    diffusionPatterns pattern;
 
     for(int i = 0; i < parsedargs.numOfArgs; i ++)
     {
@@ -178,11 +189,16 @@ int main(int argc, char *argv[])
         case sobelArg:
             sobelEdgeDetection(imageData.ImagePixels, abs(imageData.Height), imageData.Width, imageData.imageFilterBuffer);            
             break;
-        case errorDiffusionArg: ;
-                scanType scan = parsedargs.argOrder[i].args.errorDither.scan;
-                BYTE level = parsedargs.argOrder[i].args.errorDither.level;
-                diffusionPatterns pattern = parsedargs.argOrder[i].args.errorDither.diffusionType;
+        case errorDitheringArg: ;
+                scan = parsedargs.argOrder[i].args.errorDither.scan;
+                level = parsedargs.argOrder[i].args.errorDither.level;
+                pattern = parsedargs.argOrder[i].args.errorDither.diffusionType;
                 errorDiffusionDithering(imageData.ImagePixels, imageData.Height, imageData.Width, pattern, scan, level, imageData.imageFilterBuffer);
+                break;
+        case bayerDitheringArg: ;
+                level = parsedargs.argOrder[i].args.bayerDither.level;
+                scale = parsedargs.argOrder[i].args.bayerDither.scale;
+                orderedDithering(imageData.ImagePixels, imageData.Height, imageData.Width, scale, level);
                 break;
             
         default:
@@ -191,7 +207,7 @@ int main(int argc, char *argv[])
     }
     
 
-
+    
 
     create_image_file(imageData, output);
 
@@ -220,7 +236,7 @@ void outputHelp(void)
            "   -greyscale: It's gray\n"
            "   -cInvert: Inverts the color\n"
            "   -boxBlur: Blurs the image using box blur algoritim\n"
-           "        -n: used to select blur radius ex:3 = 3x3\n"
+           "        -a: used to select blur area ex:3 = 3x3\n"
            "   -errorDiff: Uses error diffusion dithering\n"
            "        -n: used to select the dithering threshold level\n"
            "        -s: is the direction the scan will take\n"
@@ -232,7 +248,10 @@ void outputHelp(void)
            "                     Atkinson\n"
            "                     Jarvis\n"
            "                     Stucki\n"
-           "                     Sierra\n");
+           "                     Sierra\n"
+           "   -Bayer\n"
+           "        -a: used to select bayer matrix valid matrixs are 2,4,8,16 ex:2 = 2x2\n"
+           "        -n: used to select the dithering threshold level\n");
 }
 
 args argParser(char *argv[], int argc) 
@@ -260,10 +279,7 @@ args argParser(char *argv[], int argc)
     for (int i = 1; i < argc; i++)
     {
 
-
         
-
-        char *currentarg = argv[i];
         if(argv[i][0] == '-' )
         {
             // Single letters onlt
@@ -340,17 +356,18 @@ args argParser(char *argv[], int argc)
 
                             switch (tempArgStore[argsIndex].type)
                             {
-                            case boxblurArg:                                 
-                                tempArgStore[argsIndex].args.boxBlur.blurScale = number;
+                            case errorDitheringArg:                                 
+                                tempArgStore[argsIndex].args.errorDither.level = number;
                                 i++;
                                 break;
-                            case errorDiffusionArg:                                 
-                                tempArgStore[argsIndex].args.errorDither.level = number;
+
+                            case bayerDitheringArg:
+                                tempArgStore[argsIndex].args.bayerDither.level = number;
                                 i++;
                                 break;
                             
                             default:
-                                printf("-n suports boxblur \n");
+                                printf("-n suports boxblur, errordithering, and bayer dithering \n");
                                 arguments.sucsess = false;
                                 return arguments;
                                 break;
@@ -373,7 +390,7 @@ args argParser(char *argv[], int argc)
 
                                     switch (tempArgStore[argsIndex].type)
                                     {
-                                    case errorDiffusionArg:
+                                    case errorDitheringArg:
                                         tempArgStore[argsIndex].args.errorDither.scan = scanChoice;
                                         i++;
                                         break;
@@ -405,7 +422,7 @@ args argParser(char *argv[], int argc)
 
                                     switch (tempArgStore[argsIndex].type)
                                     {
-                                    case errorDiffusionArg:
+                                    case errorDitheringArg:
                                         tempArgStore[argsIndex].args.errorDither.diffusionType = diffuisonChoice;
                                         i++;
                                         break;
@@ -422,6 +439,62 @@ args argParser(char *argv[], int argc)
                             }
                         break;
 
+                    case 'a':
+                        if(currentarg > 0)
+                        {
+                            if(i + 1 >= argc)
+                            {
+                                printf("no numbers giver for -a\n");
+                                        arguments.sucsess = false;
+                                        return arguments;
+
+                            }
+                            int number = 0;
+                            if(isanum(argv[i+1]) == true)
+                            {
+                                number = atoi(argv[i+1]);
+                            }
+                            switch (tempArgStore[argsIndex].type)
+                            {
+                                case boxblurArg:                                 
+                                    tempArgStore[argsIndex].args.boxBlur.blurScale = number;
+                                    i++;
+                                    break;
+
+                                case bayerDitheringArg:
+                                    
+                                    switch (number)
+                                    {
+                                        case 2:
+                                        case 4:
+                                        case 8:
+                                        case 16:
+                                            tempArgStore[argsIndex].args.bayerDither.scale = number;
+                                            i++;
+                                            break;
+                                    
+                                    default:
+                                        printf("Bayer dithering only suports scales of 2, 4, 8, and 16\n");
+                                        arguments.sucsess = false;
+                                        return arguments;
+                                        break;
+                                    }
+
+                                    break;
+                                
+                                default:
+                                        printf("-a suports Blur and bayer\n");
+                                        arguments.sucsess = false;
+                                        return arguments;
+                                        break;
+                            }
+                        
+                            
+                        break;      
+                                
+
+                    
+                    }
                     default:
                         printf("Error with argument %s%s%s example.\n", "\033[4m", argv[i], "\033[0m"); // Just for underlining im crine
                         arguments.sucsess = false;
@@ -450,11 +523,16 @@ args argParser(char *argv[], int argc)
                                 tempArgStore[argsIndex].type = boxblurArg; 
                                 tempArgStore[argsIndex].args.boxBlur.blurScale = 3; //setting default
                                 break;
-                            case errorDiffusionArg:
-                                tempArgStore[argsIndex].type = errorDiffusionArg;
+                            case errorDitheringArg:
+                                tempArgStore[argsIndex].type = errorDitheringArg;
                                 tempArgStore[argsIndex].args.errorDither.diffusionType = diffusionPatternFloyd; //setting default
                                 tempArgStore[argsIndex].args.errorDither.scan = scanBothWays; //setting default
                                 tempArgStore[argsIndex].args.errorDither.level = 2; //setting default
+                                break;
+                            case bayerDitheringArg:
+                                tempArgStore[argsIndex].type = bayerDitheringArg;
+                                tempArgStore[argsIndex].args.bayerDither.level = 4; //setting default
+                                tempArgStore[argsIndex].args.bayerDither.scale = 4; //setting default
 
                                 break;
                             default:
@@ -467,7 +545,7 @@ args argParser(char *argv[], int argc)
 
 
             }
-            // BoxBlur, SobelEdge, Grayscale, Inverted
+            // Major args here
            
         
         }
@@ -517,20 +595,27 @@ int getNumOfFunctionArgs(char *argv[], int argc)
 // optomise later w/ a single loop if i get more  args
 int checkFunctionArgs(char* arg)
 {
-    if(strcmp(arg, "-sobel") == 0)
+    char* temparg = toLower(arg);
+
+    if(strcmp(temparg, "-sobel") == 0)
         return sobelArg;
     
-    if(strcmp(arg, "-greyscale") == 0)
+    if(strcmp(temparg, "-greyscale") == 0)
+        return greyscaleArg;
+    if(strcmp(temparg, "-grayscale") == 0)
         return greyscaleArg;
     
-    if(strcmp(arg, "-cInvert") == 0)
+    if(strcmp(temparg, "-cinvert") == 0)
         return invertArg;
     
-    if(strcmp(arg, "-boxblur") == 0)
+    if(strcmp(temparg, "-boxblur") == 0)
         return boxblurArg;
 
-    if(strcmp(arg, "-errorDiff") == 0)
-        return errorDiffusionArg;
+    if(strcmp(temparg, "-errordiff") == 0)
+        return errorDitheringArg;
+
+    if(strcmp(temparg, "-bayer") == 0)
+        return bayerDitheringArg;
     
     return argError;
 }
@@ -555,6 +640,19 @@ char *toUpper(char *word)
         if(word[i] >= 'a' && word[i] <= 'z')
         {
             word[i] = word[i] - distanceBetweencases;
+
+        }
+    }
+    return word;
+}
+char *toLower(char *word)
+{
+    BYTE distanceBetweencases =32; // a - A
+    for(int i = 0; i < strlen(word); i++)
+    {
+        if(word[i] >= 'A' && word[i] <= 'Z')
+        {
+            word[i] = word[i] + distanceBetweencases;
 
         }
     }

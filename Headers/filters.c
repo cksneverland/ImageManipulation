@@ -23,7 +23,7 @@ filterBuffer **createFilterBuffer(signedDWORD height, signedDWORD width)
     {
         imageBuffer[i] = &imageBufferRows[i* width];
     }
-    clearFilterBuffer(imageBuffer, height, width);
+    clearFilterBuffer(imageBuffer, abs(height), width);
     return imageBuffer;
 }
 
@@ -412,4 +412,96 @@ void errorDiffusionDithering(pixel** regularimage ,signedDWORD height, signedDWO
 
         }
     }
+}
+
+
+void orderedDithering(pixel** regularimage, signedDWORD height, signedDWORD width, int bayerScale, int level)
+{
+
+    float  step = 255 / (float)(level- 1);
+    height = abs(height);
+
+    const BYTE **bayerPattern = malloc(sizeof(BYTE*) * bayerScale);
+
+    switch (bayerScale)
+    {
+    case 2:
+        bayerPattern[0] = &bayerPattern2X2[0][0];
+        bayerPattern[1] = &bayerPattern2X2[1][0];
+        break;
+    case 4:
+        bayerPattern[0] = &bayerPattern4X4[0][0];
+        bayerPattern[1] = &bayerPattern4X4[1][0];
+        bayerPattern[2] = &bayerPattern4X4[2][0];
+        bayerPattern[3] = &bayerPattern4X4[3][0];
+        break;
+    case 8:
+        bayerPattern[0] = &bayerPattern8X8[0][0];
+        bayerPattern[1] = &bayerPattern8X8[1][0];
+        bayerPattern[2] = &bayerPattern8X8[2][0];
+        bayerPattern[3] = &bayerPattern8X8[3][0];
+        bayerPattern[4] = &bayerPattern8X8[4][0];
+        bayerPattern[5] = &bayerPattern8X8[5][0];
+        bayerPattern[6] = &bayerPattern8X8[6][0];
+        bayerPattern[7] = &bayerPattern8X8[7][0];
+        break;
+    case 16:
+        bayerPattern[0]  = &bayerPattern16X16[0][0];
+        bayerPattern[1]  = &bayerPattern16X16[1][0];
+        bayerPattern[2]  = &bayerPattern16X16[2][0];
+        bayerPattern[3]  = &bayerPattern16X16[3][0];
+        bayerPattern[4]  = &bayerPattern16X16[4][0];
+        bayerPattern[5]  = &bayerPattern16X16[5][0];
+        bayerPattern[6]  = &bayerPattern16X16[6][0];
+        bayerPattern[7]  = &bayerPattern16X16[7][0];
+        bayerPattern[8]  = &bayerPattern16X16[8][0];
+        bayerPattern[9]  = &bayerPattern16X16[9][0];
+        bayerPattern[10] = &bayerPattern16X16[10][0];
+        bayerPattern[11] = &bayerPattern16X16[11][0];
+        bayerPattern[12] = &bayerPattern16X16[12][0];
+        bayerPattern[13] = &bayerPattern16X16[13][0];
+        bayerPattern[14] = &bayerPattern16X16[14][0];
+        bayerPattern[15] = &bayerPattern16X16[15][0];
+        break;
+    
+    default:
+        break;
+    }
+
+    for(int rows = 0; rows < height; rows++)
+    {
+        int bayerRowIndex = rows % bayerScale;
+        pixel *rowPixels = regularimage[rows];
+        for(int columns = 0; columns < width; columns++)
+        {
+            int bayerColumnIndex = columns % bayerScale;
+            int threshold = bayerPattern[bayerRowIndex][bayerColumnIndex];
+            
+            int quantizedR = rowPixels[columns].red   - threshold;
+            int quantizedG = rowPixels[columns].green - threshold;
+            int quantizedB = rowPixels[columns].blue  - threshold;
+
+            quantizedR = pixelClamp(quantizedR);
+            quantizedG = pixelClamp(quantizedG);
+            quantizedB = pixelClamp(quantizedB);
+
+            quantizedR = (int)roundf(((float)(quantizedR * (level - 1) + 127) / 255.0f) * step);
+            quantizedG = (int)roundf(((float)(quantizedG * (level - 1) + 127) / 255.0f) * step);
+            quantizedB = (int)roundf(((float)(quantizedB * (level - 1) + 127) / 255.0f) * step);
+
+
+
+            // quantizedR = (quantizedR < threshold) ? 0:255;
+            // quantizedG = (quantizedG < threshold) ? 0:255;
+            // quantizedB = (quantizedB < threshold) ? 0:255;
+
+            
+
+            rowPixels[columns].red = quantizedR;
+            rowPixels[columns].green = quantizedG;
+            rowPixels[columns].blue = quantizedB;
+
+        }
+    }
+
 }

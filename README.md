@@ -13,7 +13,8 @@
 |-greyscale| It's gray|
 |-cInvert|Inverts the color|
 |-boxBlur| Blurs the image using box blur algoritim
-|errorDifusinDithering| floyd, simple2D,jarvis, atkinson, stucki, (FUll)sierra
+|-errordiff (errorDifusinDithering)| floyd, simple2D,jarvis, atkinson, stucki, (FUll)sierra
+|-Bayer| uses bayer matrixes to dither 2 - 16
 
 
 

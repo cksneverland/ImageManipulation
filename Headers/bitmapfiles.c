@@ -176,12 +176,12 @@ pixel** create_4BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
     BYTE BitMaksModeDefault = 1; // Upper part of the byte
     BYTE bitMaskMode = BitMaksModeDefault;
 
-    int start = (polarity == 0) ? 0 : width - 1;
-    int end   = (polarity == 0) ? width : -1;
+    int start = (polarity == 0) ? 0 : abs(height) - 1;
+    int end   = (polarity == 0) ? abs(height) : -1;
     int direction = (polarity == 0) ? 1: -1;
 
-    // Making the Image part
-    for(int row = 0; row < height; row += 1)
+    // making the image part
+    for(int row = start; row != end; row+= direction)
     {   
         pixel *tempColumns = image[row];
         
@@ -245,12 +245,13 @@ pixel** create_8BitPallete_Image(BYTE *loadedBytes, signedDWORD width, signedDWO
     BYTE paddedBytes = calculatePaddedBytes(abs(width), byteSizeInBits);
 
     DWORD loadedByteIndex = 0;
-    int start = (polarity == 0) ? 0 : width - 1;
-    int end   = (polarity == 0) ? width : -1;
+    int start = (polarity == 0) ? 0 : abs(height) - 1;
+    int end   = (polarity == 0) ? abs(height) : -1;
     int direction = (polarity == 0) ? 1: -1;
 
-    // Making the Image part
-    for(int row = 0; row < height; row += 1)
+    DWORD currentIndex = 0;
+    // making the image part
+    for(int row = start; row != end; row+= direction)
     {   
         pixel *tempColumns = image[row];
         
@@ -284,13 +285,13 @@ pixel** create_16Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
     }
 
     BYTE paddedBytes = calculatePaddedBytes(abs(width), wordSizeInBits);
-    int start = (polarity == 0) ? 0 : width - 1;
-    int end   = (polarity == 0) ? width : -1;
+    int start = (polarity == 0) ? 0 : abs(height) - 1;
+    int end   = (polarity == 0) ? abs(height) : -1;
     int direction = (polarity == 0) ? 1: -1;
 
     DWORD currentIndex = 0;
     // making the image part
-    for(int row = 0; row < height; row++)
+    for(int row = start; row != end; row+= direction)
     {
         pixel *tempColumns = image[row];
         for(int column = start; column != end; column+= direction)
@@ -324,16 +325,16 @@ pixel** create_24Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 
     BYTE paddedBytes = calculatePaddedBytes(abs(width), 24); // 24 fro 24 bits lmao
 
-    int start = (polarity == 0) ? 0 : width - 1;
-    int end   = (polarity == 0) ? width : -1;
+    int start = (polarity == 0) ? 0 : abs(height) - 1;
+    int end   = (polarity == 0) ? abs(height) : -1;
     int direction = (polarity == 0) ? 1: -1;
 
     DWORD currentIndex = 0;
     // making the image part
-    for(int row = 0; row < height; row++)
+    for(int row = start; row != end; row+= direction)
     {
         pixel *tempColumns = image[row];
-        for(int column = start; column != end; column+= direction)
+        for(int column = 0; column <  width; column++)
         {
             // comine two seqential Bytes
 
@@ -366,12 +367,13 @@ pixel** create_32Bit_Image(BYTE *loadedBytes, signedDWORD width, signedDWORD hei
 
     BYTE paddedBytes = calculatePaddedBytes(abs(width), dwordSizeInBits); 
 
-    int start = (polarity == 0) ? 0 : width - 1;
-    int end   = (polarity == 0) ? width : -1;
+    int start = (polarity == 0) ? 0 : abs(height) - 1;
+    int end   = (polarity == 0) ? abs(height) : -1;
     int direction = (polarity == 0) ? 1: -1;
+
     DWORD currentIndex = 0;
     // making the image part
-    for(int row = 0; row < height; row++)
+    for(int row = start; row != end; row+= direction)
     {
         pixel *tempColumns = image[row];
         for(int column = 0; column < width; column++)
