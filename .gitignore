@@ -1,0 +1,10 @@
+imagedtecv2
+imagedtecv2.exe
+*.o
+*.obj
+.vscode/
+.vs/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
